@@ -1,0 +1,155 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.below-nav {
+  padding-top: 3.5rem;
+}
+
+.color-nav {
+  background-color: green;
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  margin-bottom: 3.5rem;
+}
+
+.scrollable-vertically {
+  display: flex;
+  height: 300px;
+  overflow-y: auto;
+  width: auto;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: white;
+}
+
+.navbar-menu-item {
+  text-decoration: none;
+  color: white;
+  margin-right: 1rem;
+}
+
+.navbar-title {
+  text-decoration: none;
+  color: white;
+  margin-left: 1rem;
+}
+
+.margin-bottom-row {
+  margin-bottom: 0.5rem;
+}
+
+.margin-bottom-1 {
+  margin-bottom: 1rem;
+}
+
+.margin-top-1 {
+  margin-top: 1rem;
+}
+
+.padding-top-1 {
+  padding-top: 1rem;
+}
+
+.margin-left {
+  margin-left: 0.5rem;
+}
+
+.margin-right {
+  margin-right: 0.5rem;
+}
+
+.background-dark {
+  background: #282c34;
+}
+
+.center-horizontally {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.center-vertically {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+.avatar-big {
+  height: 50%;
+}
+
+.center-vertically-row {
+  display: flex;
+  align-items: center;
+}
+
+.margin-top-50{
+  top:50%;
+  position:relative;
+}
+
+.background-light-grey{
+  background: #E0E0E0;
+}
+
+.padding-zero{
+  padding:0;
+}
+
+.card-avatar{
+  width:10rem;
+  margin-bottom:2rem;
+  margin-right:2rem;
+}
+
+.accordion-background{
+  color: #ffffff;
+  background-color: #29008a;
+  box-shadow: inset 0 -1px 0 rgb(0 0 0 / 13%);
+}
