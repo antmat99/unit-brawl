@@ -1,0 +1,343 @@
+URL: /avatars/shop
+Metodo HTTP: POST
+Descrizione: processo di acquisto di uno o più avatar
+Body della richiesta:
+    {
+        "avatarIdList": [1,2,7,3]
+    }
+Status della risposta: 200 (ok), 500 (errore nel database), 400 (se l'utente non ha abbastanza soldi o ha già l'avatar)
+Body della risposta: -
+
+
+URL: /labs
+Metodo HTTP: GET
+Descrizione: ritorna la lista di tutti i laboratori (senza il link alla repository della soluzione). Se l'utente non ha partecipato al laboratorio, userResult e username saranno undefined.
+Body della richiesta: [1,2,7,3]
+Status della risposta: 200 (ok), 500 (errore nel database), 404 (se non ci sono laboratori attivi), 400 (se l'utente non ha abbastanza soldi o ha già l'avatar)
+Body della risposta: 
+[
+  Lab {
+    id: 27,
+    name: 'Lab 1',
+    deadline: '30-11-2022',
+    trace: 'trace 1',
+    expired: true,
+    leaderboard: [ 
+        {
+        "labName": "Lab 1",
+        "completed": true,
+        "points": 5,
+        "position": 1,
+        "username": "user_1",
+        "userAvatarLink": "link"
+        },
+        {
+            "labName": "Lab 1",
+            "completed": true,
+            "points": 3,
+            "position": 2,
+            "username": "user_2",
+            "userAvatarLink": "link"
+        }
+    ],
+    userResult: Result {
+      labName: 'Lab 1',
+      completed: true,
+      points: 130,
+      position: 1,
+      username: undefined,
+      userAvatarLink: undefined
+    },
+    username: 'username'
+  },
+  Lab {
+    id: 28,
+    name: 'Lab 2 new',
+    deadline: '30-11-2022',
+    trace: 'trace 2',
+    expired: true,
+    leaderboard: [ 
+        {
+        "labName": "Lab 1",
+        "completed": true,
+        "points": 5,
+        "position": 1,
+        "username": "user_1",
+        "userAvatarLink": "link"
+        },
+        {
+            "labName": "Lab 1",
+            "completed": true,
+            "points": 3,
+            "position": 2,
+            "username": "user_2",
+            "userAvatarLink": "link"
+        }
+     ],
+    userResult: {
+      labName: 'Lab 2 new',
+      completed: true,
+      points: 24,
+      position: 2,
+      username: undefined,
+      userAvatarLink: undefined
+    },
+    username: 'username'
+  }
+]
+
+
+URL: /leaderboard/:quantity
+Metodo HTTP: GET
+Descrizione: ritorna le prime <quantity> righe della leaderboard globale 
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+[
+    {
+            "labName": "",
+            "completed": true,
+            "points": 100,
+            "position": 1,
+            "username": "user_1",
+            "userAvatarLink": "link_1"
+    },
+    {
+            "labName": "",
+            "completed": true,
+            "points": 50,
+            "position": 2,
+            "username": "user_2",
+            "userAvatarLink": "link_2"
+   },
+   {
+            "labName": "",
+            "completed": true,
+            "points": 10,
+            "position": 3,
+            "username": "user_3",
+            "userAvatarLink": "link_3"
+   }
+]
+
+
+URL: /users/results
+Metodo HTTP: GET
+Descrizione: ritorna la lista di risultati dell'utente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+[
+    {
+        "nickname": "nick",
+        "labName": "Lab 1",
+        "points": 39,
+        "position": 43
+    },
+    {
+        "nickname": "nick",
+        "labName": "Lab 2",
+        "points": 21,
+        "position": 3
+    },
+    {
+        "nickname": "nick",
+        "labName": "Lab 3",
+        "points": 311,
+        "position": 4
+    }
+]
+
+
+URL: /users/avatars
+Metodo HTTP: GET
+Descrizione: ritorna la lista di avatar dell'utente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta:
+[
+    {
+        "id": 1,
+        "name": "Avatar 1",
+        "description":"Avatar 1 description",
+        "imagePath":"Link_avatar_1_image",
+        "price": 34
+    },
+    {
+        "id": 2,
+        "name": "Avatar 2",
+        "description":"Avatar 2 description",
+        "imagePath":"Link_avatar_2_image",
+        "price": 3
+    }
+]
+
+
+URL: /users/avatars/not
+Metodo HTTP: GET
+Descrizione: ritorna la lista di avatar che non sono in possesso dell'utente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta:
+[
+    {
+        "id": 1,
+        "name": "Avatar 1",
+        "description":"Avatar 1 description",
+        "imagePath":"Link_avatar_1_image",
+        "price": 34
+    },
+    {
+        "id": 2,
+        "name": "Avatar 2",
+        "description":"Avatar 2 description",
+        "imagePath":"Link_avatar_2_image",
+        "price": 3
+    }
+]
+
+
+URL: /users/name
+Metodo HTTP: GET
+Descrizione: ritorna il nome dell'utente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: "Name"
+
+
+URL: /users/surname
+Metodo HTTP: GET
+Descrizione: ritorna il cognome dell'utente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: "Surname"
+
+
+URL: /users/nickname
+Metodo HTTP: GET
+Descrizione: ritorna il nickname dell'utente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: "Nickname"
+
+
+URL: /users/achievements
+Metodo HTTP: GET
+Descrizione: ritorna la lista degli achievement dell'utente
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta:
+[
+    {
+        "name": "Achievement 1 name",
+        "description": "Achievement 1 description",
+        "badge_path": "achievement_1_image_link",
+        "completition_percentage": "30%",
+        "code":"AVATAR_4"
+    },
+    {
+        "name": "Achievement 2 name",
+        "description": "Achievement 2 description",
+        "badge_path": "achievement_2_image_link",
+        "completition_percentage": "0%",
+        "code":"JOIN_1"
+    },
+]
+
+URL: /users/achievements/fake
+Metodo HTTP: GET
+Descrizione: ritorna la lista degli achievement provvisori dell'utente riguardanti la coverage
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta:
+[
+    {
+        "name": "Achievement 1 name",
+        "description": "Achievement 1 description",
+        "badge_path": "achievement_1_image_link",
+        "completition_percentage": "30%",
+        "code": "COVERAGE_50_1"
+    },
+    {
+        "name": "Achievement 2 name",
+        "description": "Achievement 2 description",
+        "badge_path": "achievement_2_image_link",
+        "completition_percentage": "0%",
+        "code": "COVERAGE_70_1"
+    },
+]
+
+
+URL: /users/money
+Metodo HTTP: GET
+Descrizione: ritorna la quantità di monete dell'utente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 43
+
+
+URL: /users/achievements/quantity
+Metodo HTTP: GET
+Descrizione: ritorna la quantità di achievement al 100% dell'utente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 4
+
+
+URL: /users/labs
+Metodo HTTP: GET
+Descrizione: ritorna la lista di id dei laboratori a cui l'utente ha partecipato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database), 404 (utente non trovato)
+Body della risposta: [{"lab_id":27},{"lab_id":29}]
+
+
+URL: /labs/join
+Metodo HTTP: POST
+Descrizione: processo di iscrizione al laboratorio in corso. L'id dell'utente viene ricavato dall'utente loggato
+Body della richiesta: {
+    "repositoryLink": "link"
+}
+Status della risposta: 200 (ok), 500 (errore nel database), 400 (se non c'è nessun laboratorio in corso)
+Body della risposta: -
+
+
+URL: /users/labs/regionLeaderboard?labId=2
+Metodo HTTP: GET
+Descrizione: ritorna la leaderboard contenente la posizione dell'utente nel lab <labId> e quelle immediatamente prima e dopo. L'id dell'utente viene ricavato dall'utente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database), 400 (labId è di un lab in corso)
+Body della risposta: 
+    [ 
+        {
+        "labName": "Lab 1",
+        "completed": true,
+        "points": 564,
+        "position": 19,
+        "username": "user_1",
+        "userAvatarLink": "link"
+        },
+        {
+            "labName": "Lab 1",
+            "completed": true,
+            "points": 20,
+            "position": 456,
+            "username": "user",
+            "userAvatarLink": "link"
+        },
+        {
+            "labName": "Lab 1",
+            "completed": true,
+            "points": 238,
+            "position": 21,
+            "username": "user_2",
+            "userAvatarLink": "link"
+        }
+     ]
+
+URL: /users/labs/active/joined
+Metodo HTTP: GET
+Descrizione: ritorna true se e solo se esiste un lab attivo e l'utente vi si è iscritto
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: true

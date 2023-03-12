@@ -1,0 +1,55 @@
+URL: /sessions
+Metodo HTTP: POST
+Descrizione: login
+Body della richiesta: 
+    {
+        "username":"user",
+        "password":"Password1."
+    }
+Status della risposta: 200 (ok), 500 (errore nel database), 401 (unauthorized)
+Body della risposta: -
+
+
+URL: /sessions/register
+Metodo HTTP: POST
+Descrizione: registrazione
+Body della richiesta: 
+    {
+        "user":{
+            "nickname":"as",
+            "password":"password",
+            "name":"new name",
+            "surname":"new surname",
+            "email":"a@a.it"
+        }
+    }
+Status della risposta: 200 (ok), 500 (errore nel database), 400 (in caso di email, nickname già esistente o nickname uguale a "admin")
+Body della risposta: "Messaggio di errore"
+
+
+URL: /sessions/current
+Metodo HTTP: GET
+Descrizione: ritorna informazioni sull'utente correntemente loggato
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database), 401 (unauthorized)
+Body della risposta: 
+    {
+
+        "id": 1,
+        "nickname": "nick",
+        "password": "sdsds",
+        "name": "Antonio",
+        "surname": "Mat",
+        "total_points": 23,
+        "money": 21.6,
+        "avatar_selected_id": 1,
+        "email": "a@a.it"
+    }
+
+
+URL: /sessions/current
+Metodo HTTP: DELETE
+Descrizione: logout
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database), 401 (unauthorized)
+Body della risposta: -

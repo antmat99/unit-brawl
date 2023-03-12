@@ -1,0 +1,398 @@
+URL: /admin/labs
+Metodo HTTP: GET
+Descrizione: ritorna una lista di tutti i laboratori (ognuno con l'url della soluzione ideale) 
+Body della richiesta: - 
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+[
+{
+    "id": 1, 
+    "name": "Lab 1",
+    "deadline": "31-11-2022",
+    "trace": "trace 1",
+    "expired": false,
+    "leaderboard": [
+        {
+        "labName": "Lab 1",
+        "completed": true,
+        "points": 5,
+        "position": 1,
+        "username": "user_1",
+        "userAvatarLink": "link"
+        },
+        {
+            "labName": "Lab 1",
+            "completed": true,
+            "points": 3,
+            "position": 2,
+            "username": "user_2",
+            "userAvatarLink": "link"
+        }
+    ],
+    "testMaxNumber": 12,
+    "linkToIdealSolution": "repo 1"
+}, {
+    "id": 2,
+    "name": "Lab 2",
+    "deadline": "26-11-2022",
+    "trace": "Trace 2",
+    "expired": true,
+    "leaderboard": 
+    [
+        {
+            "labName": "Lab 2",
+            "completed": true,
+            "points": 6,
+            "position": 1,
+            "username": "user",
+            "userAvatarLink": "link"
+        }
+    ],
+    "testMaxNumber": 1,
+    "linkToIdealSolution": "link"
+}]
+
+	 
+URL: /admin/labs
+Metodo HTTP: POST
+Descrizione: crea un nuovo laboratorio attivo
+Body della richiesta: 
+    {
+        "id": 2, //ignorato dal server
+        "name": "Lab 2",
+        "deadline": "26-11-2022",
+        "trace": "Trace 2",
+        "expired": true,
+        "leaderboard": null,
+        "testMaxNumber": 6,
+        "linkToIdealSolution": "link"
+    }
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: -
+
+
+URL: /admin/labs/active
+Metodo HTTP: GET
+Descrizione: ritorna il laboratorio attivo (se c'è)
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database), 404 (se non ci sono laboratori attivi)
+Body della risposta: 
+{
+        "id": 1,
+        "name": "Lab 1",
+        "deadline": "31-11-2022",
+        "trace": "trace 1",
+        "expired": false,
+        "leaderboard": []
+        "testMaxNumber": 12,
+        "linkToIdealSolution": "repo 1"
+    }
+
+
+URL: /admin/labs/:id/leaderboard
+Metodo HTTP: GET
+Descrizione: ritorna la leaderboard del laboratorio con id <id>
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+[
+    {
+        "labName": "Lab 1",
+        "completed": true,
+        "points": 5,
+        "position": 1,
+        "username": "user_1",
+        "userAvatarLink": "link1"
+    },
+    {
+        "labName": "Lab 2",
+        "completed": true,
+        "points": 2,
+        "position": 2,
+        "username": "user_2",
+        "userAvatarLink": "link2"
+    }
+]
+
+
+URL: /admin/labs
+Metodo HTTP: PUT
+Descrizione: aggiorna un laboratorio
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+    {
+        "id": 1,
+        "name": "Lab 1",
+        "deadline": "31-11-2022",
+        "trace": "trace 1",
+        "expired": false,
+        "leaderboard": [
+            {
+            "labName": "Lab 1",
+            "completed": true,
+            "points": 5,
+            "position": 1,
+            "username": "user_1",
+            "userAvatarLink": "link"
+            },
+         {
+                "labName": "Lab 1",
+                "completed": true,
+                    "points": 3,
+                "position": 2,
+                "username": "user_2",
+                "userAvatarLink": "link"
+            }
+        ],
+        "testMaxNumber": 12,
+        "linkToIdealSolution": "repo 1"
+    }
+
+
+URL: /admin/labs/:id
+Metodo HTTP: DELETE
+Descrizione: elimina il laboratorio con id <id>
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: -
+
+
+URL: /admin/labs/stop/:id
+Metodo HTTP: POST
+Descrizione: interrompe il laboratorio con id <id>
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database), 404 (laboratorio non esistente)
+Body della risposta: -
+
+
+URL: /admin/labs/:id
+Metodo HTTP: GET
+Descrizione: ritorna il laboratorio con id <id>
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database), 404 (laboratorio non esistente)
+Body della risposta: 
+    {
+        "id": 1,
+        "name": "Lab 1",
+        "deadline": "31-11-2022",
+        "trace": "trace 1",
+        "expired": false,
+        "leaderboard": [
+            {
+            "labName": "Lab 1",
+            "completed": true,
+            "points": 5,
+            "position": 1,
+            "username": "user_1",
+            "userAvatarLink": "link"
+            },
+         {
+                "labName": "Lab 1",
+                "completed": true,
+                    "points": 3,
+                "position": 2,
+                "username": "user_2",
+                "userAvatarLink": "link"
+            }
+        ],
+        "testMaxNumber": 12,
+        "linkToIdealSolution": "repo 1"
+    }
+
+
+URL: /admin/labs/:id/players/count
+Metodo HTTP: GET
+Descrizione: ritorna il numero di giocatori iscritti al laboratorio con id <id>
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database), 404 (laboratorio non esistente)
+Body della risposta: 5
+
+
+URL: /admin/avatars
+Metodo HTTP: GET
+Descrizione: ritorna la lista di avatar
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+[   
+    {
+        "id": 1,
+        "name": "a1",
+        "description": "a1",
+        "price": 1,
+        "image_path": "img path avatar 1"
+    }, 
+    {
+        "id": 2,
+        "name": "a2",
+        "description": "a2",
+        "price": 3.6,
+        "image_path": "img path avatar 2"
+    }
+]
+
+
+URL: /admin/avatars/:id
+Metodo HTTP: DELETE
+Descrizione: elimina l'avatar con id <id>
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: -
+
+
+URL: /admin/avatars
+Metodo HTTP: PUT
+Descrizione: aggiorna l'avatar
+Body della richiesta: 
+{
+  	"id": 1,
+    "name": "a1",
+    "description": "d1",
+    "price": 1,
+    "imagePath": "img path avatar 1"
+}
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: -
+
+
+URL: /admin/avatars
+Metodo HTTP: POST
+Descrizione: crea un nuovo avatar
+Body della richiesta: 
+{
+  	"id": 1, //ignorato dal server
+    "name": "a1",
+    "description": "d1",
+    "price": 1,
+    "imagePath": "img path avatar 1"
+}
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: -
+
+
+URL: /admin/reports/general
+Metodo HTTP: GET
+Descrizione: ottiene un report generale sul sistema
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+    {
+        "labTotalNumber": 4,
+        "userTotalNumber": 3,
+        "avgParticipantsPerLab": 0.75,
+        "labsWithoutParticipantsCount": 2
+    }
+
+
+URL: /admin/reports/labs
+Metodo HTTP: GET
+Descrizione: ottiene un report sui laboratori
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+[
+    {
+        "id": 0,
+        "participants": 0,
+        "participantsPercentage": 0,
+        "avgPoints": 0
+    },
+    {
+        "id": 1,
+        "participants": 2,
+        "participantsPercentage": 66.66666666666667,
+        "avgPoints": 3.5
+    }
+]
+
+
+URL: /admin/reports/users
+Metodo HTTP: GET
+Descrizione: ottiene un report sugli utenti
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+[
+    {
+        "id": 1,
+        "nickname": "user 1",
+        "fullName": "Mario Rossi",
+        "labsAttendedCount": 1,
+        "labsAttendedPercentage": 25,
+        "avgPoints": 5,
+        "bestPosition": 2
+    },
+    {
+        "id": 2,
+        "nickname": "antmat99",
+        "fullName": "Luigi Verdi",
+        "labsAttendedCount": 2,
+        "labsAttendedPercentage": 50,
+        "avgPoints": 4,
+        "bestPosition": 1
+    }
+]
+
+URL: /admin/leaderboard
+Metodo HTTP: GET
+Descrizione: ritorna la leaderboard globale
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+[
+    {
+            "labName": "",
+            "completed": true,
+            "points": 100,
+            "position": 1,
+            "username": "user_1",
+            "userAvatarLink": "link_1"
+    },
+    {
+            "labName": "",
+            "completed": true,
+            "points": 50,
+            "position": 2,
+            "username": "user_2",
+            "userAvatarLink": "link_2"
+   },
+   {
+            "labName": "",
+            "completed": true,
+            "points": 10,
+            "position": 3,
+            "username": "user_3",
+            "userAvatarLink": "link_3"
+   }
+] 
+
+URL: /admin/reports/userlabs
+Metodo HTTP: GET
+Descrizione: ottiene un report su laboratori e utenti
+Body della richiesta: -
+Status della risposta: 200 (ok), 500 (errore nel database)
+Body della risposta: 
+[
+    {
+        "user_id": 1,
+        "lab_id": 4,
+        "points": 133,
+        "position": 1,
+        "repository": "https://gitlab.com/user/project.git",
+        "coverage_percentage": 65,
+        "test_failed_on_enemies": 32
+        "test_passed_on_own": 54
+
+    },
+    {
+        "user_id": 3,
+        "lab_id": 2,
+        "points": 13,
+        "position": 56,
+        "repository": "https://gitlab.com/user2/project2.git",
+        "coverage_percentage": 14,
+        "test_failed_on_enemies": 3
+        "test_passed_on_own": 69
+    }
+]
