@@ -8,7 +8,7 @@ Unit Brawl is a gamified application meant to manage multiple rounds, each one c
 
 * Node.js
 * npm
-* Maven
+* Maven (Docker image maven:3.8.6-openjdk-18)
 
 ### What you need to do
 
