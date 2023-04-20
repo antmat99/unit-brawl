@@ -114,6 +114,7 @@ function ModalJoinLab(props) {
     }
 
     const handleSubmit = async (event) => {
+        event.preventDefault();
         if (isValidLink) {
             setBackendError(false);
             setBackendErrorMessage('');

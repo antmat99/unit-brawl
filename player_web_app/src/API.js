@@ -402,6 +402,32 @@ async function getGlobalRegionLeaderboard() {
     }
 }
 
+async function getTestsReport() {
+    const response = await fetch(URL + '/labs/progress', { credentials: 'include'})
+    const reportJSON = await response.json()
+    console.log('Report retrieved!')
+    console.log(reportJSON)
+    if(response.ok) {
+        return reportJSON
+    } else {
+        console.log('ERROR: Could not retreive JSON report') 
+    }
+}
+
+async function checkLabProgress() {
+    const response = await fetch(URL + '/labs/progress', { credentials: 'include'})
+    const progress = await response.json()
+    if(response.ok) {
+        if(progress.result) {
+            return progress
+        } else {
+            return progress
+        }
+    } else {
+        console.log('ERROR: could not check lab progress')
+    }
+}
+
 
 const API = {
     registerUser,
@@ -430,6 +456,8 @@ const API = {
     setAvatarAsPropic,
     getUserAvatarSelected,
     isUserJoinedActiveLab,
-    getGlobalRegionLeaderboard
+    getGlobalRegionLeaderboard,
+    getTestsReport,
+    checkLabProgress
 };
 export default API;

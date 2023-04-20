@@ -13,4 +13,6 @@ router.get('/', labController.getAllLabs);
 
 router.post('/join', isLabActive, labController.joinLab);
 
+router.get('/progress', isLabActive, labController.checkProgress);
+
 module.exports = router; 

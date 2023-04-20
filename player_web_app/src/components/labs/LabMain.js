@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ProgressBar, Container, Row, Col, Nav, Button } from 'react-bootstrap';
 import Leaderboard from "../../components/common/Leaderboard"
+import LabProgress from './LabsComponents/LabProgress'
 import Countdown from 'react-countdown';
 
 
@@ -13,7 +14,8 @@ function LabMain(props) {
     const MainComponents = {
         Trace: 'trace',
         Leaderboard: 'leaderboard',
-        MyResults: 'myresults'
+        MyResults: 'myresults',
+        Progress: 'progress'
     }
 
     const { lab, labsAttendedIds, joinLab, userLabRegionLeaderboard, editRepository } = props;
@@ -88,6 +90,7 @@ function LabMain(props) {
                                 Expired: {lab.deadline}
                             </h4>
                             :
+                            // Timer progress bar is shown only if there are less than 24 hours left
                             (dayjs(lab.deadline, 'DD-MM-YYYY').diff(dayjs(), 'minute') < 1440) ?
                                 <>
                                     <Col lg={12}>
@@ -116,6 +119,9 @@ function LabMain(props) {
                             <Nav.Item>
                                 <Nav.Link eventKey={MainComponents.Trace}>Trace</Nav.Link>
                             </Nav.Item>
+                            <Nav.Item>
+                                <Nav.Link eventKey={MainComponents.Progress}>Progress</Nav.Link>
+                            </Nav.Item>
                             {
                                 lab.expired ?
                                     <>
@@ -134,7 +140,7 @@ function LabMain(props) {
                 </Row>
                 <Row>
                     <Col lg={12}>
-                        {component == MainComponents.Trace ?
+                         {component == MainComponents.Trace ?
                             <MainComponentTrace trace={lab.trace} />
                             :
                             ''
@@ -152,6 +158,10 @@ function LabMain(props) {
                             :
                             ''
                         }
+                        {component == MainComponents.Progress ? 
+                            <MainComponentProgress/>
+                        :
+                        ''}
                     </Col>
                 </Row>
             </Container>
@@ -200,6 +210,12 @@ function MainComponentResult(props) {
 
             }
         </>
+    )
+}
+
+function MainComponentProgress(props) {
+    return (
+        <LabProgress/>
     )
 }
 

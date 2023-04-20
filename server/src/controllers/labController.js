@@ -115,3 +115,36 @@ exports.joinLab = async (req, res) => {
         res.status(e.code).end(e.message)
     }
 };
+
+exports.checkProgress = async (req, res) => {
+    try {
+        // TODO: get actual repo links
+        const result = await labService.checkProgress()
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json(result)
+    } catch(e) {
+        res.status(e.code).end(e.message)
+    }
+}
+
+exports.checkSolutionCompiles = async (req, res) => {
+    try {
+        const report = await labService.checkSolutionCompiles(req.body.repositoryLink)
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json(report)
+    } catch(e) {
+        res.status(e.code).end(e.message)
+    }
+}
+
+exports.getTestsReport = async (req, res) => {
+    try {
+        // TODO use user's repo link
+        const report = await labService.getTestsReport('https://gitlab.com/matteofavretto/mountain-huts.git');
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json(report)
+    } catch(e) {
+        console.log(e)
+        res.status(e.code).end(e.message)
+    }
+}

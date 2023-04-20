@@ -155,6 +155,7 @@ function ModalStartEditLab(props) {
     }
 
     const handleSubmit = async (event) => {
+        event.preventDefault();
         if (isValidName && isValidTrace && isValidDate && isValidTestMaxNumber && isValidLinkToIdealSolution) {
             setBackendError(false);
             setBackendErrorMessage('');

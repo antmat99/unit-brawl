@@ -8,6 +8,13 @@ const Exception = require('../models/Exception')
 const Result = require('../models/Result')
 const dayjs = require('dayjs');
 const customParseFormat = require('dayjs/plugin/customParseFormat');
+
+const fs = require('fs')
+const e = require('child_process');
+
+const shellService = require('./shellService')
+const fileService = require('./fileService');
+const xml = require('fast-xml-parser')
 dayjs.extend(customParseFormat)
 
 exports.getAllLabs = async (userId) => {
@@ -180,21 +187,22 @@ exports.getLabPlayersCount = async (labId) => {
     }
 }
 
-exports.joinLab = async (userId,repositoryLink) => {
+exports.joinLab = async (userId, repositoryLink) => {
     try {
         const activeLab = await labDao.getActiveLab();
         if (activeLab.length == 0) throw (new Exception(404, 'No active labs found.'));
         if (activeLab.length > 1) throw (new Exception(500, 'Database error: there should be at most one active lab, but found ' + ret.length + '.'));
-        const ret = await userLabDao.insertUserLab(userId,activeLab[0].id,repositoryLink);
+        const ret = await userLabDao.insertUserLab(userId, activeLab[0].id, repositoryLink);
         //initialize coverage achievements
         const uncompletedCoverageAchievements = await achievementDao.getUncompletedCoverageAchievements(userId);
-        for(let achievement of uncompletedCoverageAchievements){
-            await achievementDao.addUserAchievementFake(userId,achievement.achievement_id,0,achievement.code);
+        for (let achievement of uncompletedCoverageAchievements) {
+            await achievementDao.addUserAchievementFake(userId, achievement.achievement_id, 0, achievement.code);
         }
         return ret;
     } catch (e) {
         if (e.code != 500) throw new Exception(e.code, e.message)
-        throw new Exception(500, e.message)    }
+        throw new Exception(500, e.message)
+    }
 }
 
 exports.stopLabIfExpired = () => {
@@ -204,3 +212,182 @@ exports.stopLabIfExpired = () => {
         //handle error
     }
 }
+
+/* --------------------------------------------------------------- */
+
+exports.checkProgress = async () => {
+    // TODO: use actual repo links
+    var result = {
+        compiles: true,
+        report: {}
+    }
+
+    try {
+        // 1. Clone student repo
+        // 2. Student solution compiles?
+        //  YES -> continue, NO -> return value to communicate it
+        // 3. Clone solution repo
+        // 4. Copy solutions tests, requirement per requirement
+        // 5. Check which pass
+        // 6. Return value to communicate it
+
+        console.log('Cloning user\'s repository...')
+        await shellService.cloneRepoInDirectory('https://gitlab.com/matteofavretto/mountain-huts.git', '/check/student')
+        console.log('Successfully cloned student\'s repository')
+        const compilationCheck = await this.checkCompile()
+        if (compilationCheck) {
+            console.log('Cloning solution\'s repository...')
+            await shellService.cloneRepoInDirectory('https://gitlab.com/matteofavretto/mountain-huts-solution.git', '/check/ideal')
+            console.log('Successfully cloned solution\'s repository')
+            try {
+                const report = this.runTests()
+                result.report = this.analyzeReport(report)
+                cleanup()
+                return result
+            } catch (e) {
+                console.log('Error running tests: ' + e)
+                cleanup()
+            }
+            cleanup()
+            return result
+        } else {
+            console.log('Student\'s solution does not compiles')
+            fileService.clearDirectory('test/packages/check/student')
+            fileService.deleteDirectory('test/packages/check/student')
+            result.compiles = false
+            return result
+        }
+    } catch (e) {
+        console.error('Error checking progress: ' + e)
+        cleanup()
+    }
+}
+
+function cleanup() {
+    fileService.clearDirectory('test/packages/check')
+    fileService.deleteDirectory('test/packages/check')
+}
+
+exports.test = async () => {
+    const testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
+    const parsed = this.analyzeReport(testReport)
+    return parsed
+} 
+
+exports.runTests = () => {
+    // We now have test/packages/check/student/lab and test/packages/check/ideal/lab
+    // We need to copy .../ideal/lab/src/test
+    // TODO use actual repo
+    const correctProjectDirPath = "C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\student\\lab"
+    console.log('Copying ideal tests in student\'s repo...')
+    fileService.copyDirectoryFiles('test/packages/check/ideal/lab/src/test/java', 'test/packages/check/student/lab/src/test/java')
+    console.log('Running tests...')
+    try {
+        e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X clean test -Dtest="AllTests.java"`);
+        console.log('Getting tests results...')
+        const testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
+/*         const options = { ignoreAttributes: false };
+        const parser = new xml.XMLParser(options);
+        const reportJSON = parser.parse(testReport) */
+        return testReport
+    } catch (e) {
+        console.log('Getting tests results...')
+        const testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
+ /*        const options = { ignoreAttributes: false };
+        const parser = new xml.XMLParser(options);
+        const reportJSON = parser.parse(testReport) */
+        return testReport
+    }   
+}
+
+exports.checkCompile = async () => {
+    try {
+        console.log('Checking if student\'s solution compiles...')
+        shellService.mavenCompile('test/packages/check/student/lab')
+        console.log('Student\'s solution compiles')
+        return true
+    } catch (e) {
+        console.error('Student\'s solution does not compile: ' + e)
+        return false
+    }
+}
+
+exports.analyzeReport = (rep) => {
+
+    const options = { 
+        ignoreAttributes: false,
+        attributeNamePrefix: "",
+        parseNodeValue: true 
+    };
+    const parser = new xml.XMLParser(options);
+    const report = parser.parse(rep)
+    
+    const testsuite = report['testsuite']
+
+    const totalTests = testsuite['tests']
+    const failures = testsuite['failures']
+    const errors = testsuite['errors']
+    const skipped = testsuite['skipped']
+
+    const testcases = testsuite['testcase']
+
+    const testcasesObj = testcases.map(tc => {
+        const tcObj = {}
+        Object.keys(tc).forEach(key => {
+            if(key !== 'failure') {
+                tcObj[key] = tc[key]
+            } else {
+                tcObj['failureMessage'] = tc[key]['message']
+                tcObj['failureType'] = tc[key]['type']
+            }
+        })
+
+        return tcObj
+    })
+
+    const groupedByClassname = testcasesObj.reduce((acc, tc) => {
+        const key = tc.classname;
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(tc);
+        return acc;
+      }, {});
+
+    const result = {
+        'totalTests': totalTests,
+        'failures': failures,
+        'errors': errors,
+        'skipped': skipped,
+        'testCases': groupedByClassname
+    }
+    return result
+}
+
+exports.getTestsReport = async (repositoryLink) => {
+    // TODO: check user solution against ideal solution and show which tests (requirements) pass and which don't
+    try {
+        console.log('Getting user\'s progress in lab...')
+        console.log('Clonining user\'s repository')
+        await shellService.cloneRepoInDirectory(repositoryLink, '/tmp')
+        console.log('Cloned user\'s repository')
+        /*         console.log('Checking if solution compiles')
+                shellService.mavenCompile('test/packages/tmp/lab')
+                console.log('Your solution compiles!') */
+        console.log('Running your tests...')
+        shellService.mavenTest('test/packages/tmp/lab')
+        console.log('Getting tests results...')
+        const reportString = fs.readFileSync('test/packages/tmp/lab/target/surefire-reports/TEST-testClass.xml')
+        const options = { ignoreAttributes: false };
+        const parser = new xml.XMLParser(options);
+        const reportJSON = parser.parse(reportString)
+        console.log('Report retrieved!')
+        console.log('Removing directory')
+        fileService.clearDirectory('test/packages/tmp')
+        fileService.deleteDirectory('test/packages/tmp')
+        return reportJSON
+    } catch (e) {
+        // TODO: handle build failure
+        console.error('Error getting lab progress: ' + e)
+    }
+} 
