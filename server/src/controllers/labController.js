@@ -127,6 +127,16 @@ exports.checkProgress = async (req, res) => {
     }
 }
 
+exports.test = async (req, res) => {
+    try {
+        const result = await labService.test()
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json(result)
+    } catch(e) {
+        res.status(e.code).end(e.message)
+    }
+}
+
 exports.checkSolutionCompiles = async (req, res) => {
     try {
         const report = await labService.checkSolutionCompiles(req.body.repositoryLink)

@@ -414,15 +414,21 @@ async function getTestsReport() {
     }
 }
 
-async function checkLabProgress() {
+async function checkProgress() {
     const response = await fetch(URL + '/labs/progress', { credentials: 'include'})
     const progress = await response.json()
     if(response.ok) {
-        if(progress.result) {
-            return progress
-        } else {
-            return progress
-        }
+        return progress
+    } else {
+        console.log('ERROR: could not check lab progress')
+    }
+}
+
+async function test() {
+    const response = await fetch(URL + '/labs/progress/test', { credentials: 'include'})
+    const progress = await response.json()
+    if(response.ok) {
+        return progress
     } else {
         console.log('ERROR: could not check lab progress')
     }
@@ -458,6 +464,7 @@ const API = {
     isUserJoinedActiveLab,
     getGlobalRegionLeaderboard,
     getTestsReport,
-    checkLabProgress
+    checkProgress,
+    test
 };
 export default API;

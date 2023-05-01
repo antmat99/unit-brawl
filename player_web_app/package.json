@@ -18,6 +18,7 @@
     "fs": "^0.0.1-security",
     "react": "^18.2.0",
     "react-bootstrap": "^2.5.0",
+    "react-circular-progressbar": "^2.1.0",
     "react-countdown": "^2.3.5",
     "react-dom": "^18.2.0",
     "react-floating-action-button": "^1.0.5",

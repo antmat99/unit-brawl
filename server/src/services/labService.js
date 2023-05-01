@@ -219,7 +219,8 @@ exports.checkProgress = async () => {
     // TODO: use actual repo links
     var result = {
         compiles: true,
-        report: {}
+        testReport: {},
+        coverageReport: {}
     }
 
     try {
@@ -231,6 +232,7 @@ exports.checkProgress = async () => {
         // 5. Check which pass
         // 6. Return value to communicate it
 
+        // TODO: copy ideal solution in test/ideal_solution?
         console.log('Cloning user\'s repository...')
         await shellService.cloneRepoInDirectory('https://gitlab.com/matteofavretto/mountain-huts.git', '/check/student')
         console.log('Successfully cloned student\'s repository')
@@ -240,26 +242,26 @@ exports.checkProgress = async () => {
             await shellService.cloneRepoInDirectory('https://gitlab.com/matteofavretto/mountain-huts-solution.git', '/check/ideal')
             console.log('Successfully cloned solution\'s repository')
             try {
-                const report = this.runTests()
-                result.report = this.analyzeReport(report)
-                cleanup()
+                const reports = this.runTests()
+                result.testReport = this.analyzeTestReport(reports.testReport)
+                result.coverageReport = this.analyzeCoverageReport(reports.coverageReport)
+                //cleanup()
                 return result
             } catch (e) {
                 console.log('Error running tests: ' + e)
-                cleanup()
+                //cleanup()
             }
-            cleanup()
+            //cleanup()
             return result
         } else {
-            console.log('Student\'s solution does not compiles')
-            fileService.clearDirectory('test/packages/check/student')
-            fileService.deleteDirectory('test/packages/check/student')
+            console.log('Student\'s solution does not compile')
+            //cleanup()
             result.compiles = false
             return result
         }
     } catch (e) {
         console.error('Error checking progress: ' + e)
-        cleanup()
+        //cleanup()
     }
 }
 
@@ -269,9 +271,21 @@ function cleanup() {
 }
 
 exports.test = async () => {
-    const testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
-    const parsed = this.analyzeReport(testReport)
-    return parsed
+    var result = {
+        compiles: true,
+        testReport: {},
+        coverageReport: {}
+    }
+
+    try {
+        const testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
+        const coverageReport = fs.readFileSync('test/packages/check/student/lab/target/site/jacoco/jacoco.xml')
+        result.testReport = this.analyzeTestReport(testReport)
+        result.coverageReport = this.analyzeCoverageReport(coverageReport)
+        return result
+    } catch (e) {
+        console.error('Error checking progress: ' + e)
+    }
 } 
 
 exports.runTests = () => {
@@ -284,19 +298,18 @@ exports.runTests = () => {
     console.log('Running tests...')
     try {
         e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X clean test -Dtest="AllTests.java"`);
-        console.log('Getting tests results...')
-        const testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
-/*         const options = { ignoreAttributes: false };
-        const parser = new xml.XMLParser(options);
-        const reportJSON = parser.parse(testReport) */
-        return testReport
+        console.log('Tests passed - Getting results...')
+        const reports = {}
+        reports.testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
+        reports.coverageReport = fs.readFileSync('test/packages/check/student/lab/target/site/jacoco/jacoco.xml')
+        return reports
     } catch (e) {
-        console.log('Getting tests results...')
-        const testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
- /*        const options = { ignoreAttributes: false };
-        const parser = new xml.XMLParser(options);
-        const reportJSON = parser.parse(testReport) */
-        return testReport
+        // TODO: check JaCoCo report when tests fail
+        console.log('Tests failed - Getting results...')
+        const reports = {}
+        reports.testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
+        //reports.coverageReport = fs.readFileSync('test/packages/check/student/lab/target/site/jacoco/jacoco.xml')
+        return reports
     }   
 }
 
@@ -312,7 +325,7 @@ exports.checkCompile = async () => {
     }
 }
 
-exports.analyzeReport = (rep) => {
+exports.analyzeTestReport = (rep) => {
 
     const options = { 
         ignoreAttributes: false,
@@ -345,6 +358,33 @@ exports.analyzeReport = (rep) => {
         return tcObj
     })
 
+    exports.analyzeCoverageReport = (rep) => {
+
+        const options = { 
+            ignoreAttributes: false,
+            attributeNamePrefix: "",
+            parseNodeValue: true 
+        };
+        const parser = new xml.XMLParser(options);
+        const reportObj = parser.parse(rep)
+        const report = reportObj.report
+
+        const instructionCounter = report.counter.find(counter => counter.type === 'INSTRUCTION')
+        const methodCounter = report.counter.find(counter => counter.type === 'METHOD')
+        const classCounter = report.counter.find(counter => counter.type === 'CLASS')
+
+        const result = {
+            'instructionsCovered': instructionCounter.covered,
+            'instructionsMissed': instructionCounter.missed,
+            'methodsCovered': methodCounter.covered,
+            'methodsMissed': methodCounter.missed,
+            'classesCovered': classCounter.covered,
+            'classesMissed': classCounter.missed
+        }
+
+        return result
+    }
+
     const groupedByClassname = testcasesObj.reduce((acc, tc) => {
         const key = tc.classname;
         if (!acc[key]) {
@@ -363,31 +403,3 @@ exports.analyzeReport = (rep) => {
     }
     return result
 }
-
-exports.getTestsReport = async (repositoryLink) => {
-    // TODO: check user solution against ideal solution and show which tests (requirements) pass and which don't
-    try {
-        console.log('Getting user\'s progress in lab...')
-        console.log('Clonining user\'s repository')
-        await shellService.cloneRepoInDirectory(repositoryLink, '/tmp')
-        console.log('Cloned user\'s repository')
-        /*         console.log('Checking if solution compiles')
-                shellService.mavenCompile('test/packages/tmp/lab')
-                console.log('Your solution compiles!') */
-        console.log('Running your tests...')
-        shellService.mavenTest('test/packages/tmp/lab')
-        console.log('Getting tests results...')
-        const reportString = fs.readFileSync('test/packages/tmp/lab/target/surefire-reports/TEST-testClass.xml')
-        const options = { ignoreAttributes: false };
-        const parser = new xml.XMLParser(options);
-        const reportJSON = parser.parse(reportString)
-        console.log('Report retrieved!')
-        console.log('Removing directory')
-        fileService.clearDirectory('test/packages/tmp')
-        fileService.deleteDirectory('test/packages/tmp')
-        return reportJSON
-    } catch (e) {
-        // TODO: handle build failure
-        console.error('Error getting lab progress: ' + e)
-    }
-} 
