@@ -13,7 +13,7 @@ router.get('/', labController.getAllLabs);
 
 router.post('/join', isLabActive, labController.joinLab);
 
-router.get('/progress', isLabActive, labController.checkProgress);
+router.post('/progress', isLabActive, labController.checkProgress);
 
 router.get('/progress/test', isLabActive, labController.test)
 

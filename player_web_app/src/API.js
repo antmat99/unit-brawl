@@ -355,6 +355,16 @@ async function getRepositoryLink(labId) {
     }
 }
 
+async function getSolutionRepositoryLink(labId) {
+    const response = await fetch(URL + '/users/labs/solRepositoryLink?labId=' + labId, { credentials: 'include' });
+    const link = await response.json();
+    if (response.ok) {
+        return link;
+    } else {
+        throw await response.json();  // an object with the error coming from the server
+    }
+}
+
 async function setAvatarAsPropic(avatarId) {
     const response = await fetch(URL + '/users/avatars/selected',
         {
@@ -403,21 +413,31 @@ async function getGlobalRegionLeaderboard() {
 }
 
 async function getTestsReport() {
-    const response = await fetch(URL + '/labs/progress', { credentials: 'include'})
+    const response = await fetch(URL + '/labs/progress', { credentials: 'include' })
     const reportJSON = await response.json()
     console.log('Report retrieved!')
     console.log(reportJSON)
-    if(response.ok) {
+    if (response.ok) {
         return reportJSON
     } else {
-        console.log('ERROR: Could not retreive JSON report') 
+        console.log('ERROR: Could not retreive JSON report')
     }
 }
 
-async function checkProgress() {
-    const response = await fetch(URL + '/labs/progress', { credentials: 'include'})
+async function checkProgress(studentRepoLink, solutionRepoLink) {
+    const response = await fetch(URL + '/labs/progress',
+        {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                studentRepoLink: studentRepoLink,
+                solutionRepoLink: solutionRepoLink
+
+            })
+        })
     const progress = await response.json()
-    if(response.ok) {
+    if (response.ok) {
         return progress
     } else {
         console.log('ERROR: could not check lab progress')
@@ -425,9 +445,9 @@ async function checkProgress() {
 }
 
 async function test() {
-    const response = await fetch(URL + '/labs/progress/test', { credentials: 'include'})
+    const response = await fetch(URL + '/labs/progress/test', { credentials: 'include' })
     const progress = await response.json()
-    if(response.ok) {
+    if (response.ok) {
         return progress
     } else {
         console.log('ERROR: could not check lab progress')
@@ -465,6 +485,7 @@ const API = {
     getGlobalRegionLeaderboard,
     getTestsReport,
     checkProgress,
-    test
+    test,
+    getSolutionRepositoryLink
 };
 export default API;

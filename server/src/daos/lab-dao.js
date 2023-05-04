@@ -359,3 +359,17 @@ exports.stopLabIfExpired = (date) => {
         });
     });
 }
+
+exports.getSolutionRepositoryLink = (labId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT solution_repository FROM lab_ideal_solution WHERE lab_id = ?'
+        db.get(sql, [labId], (err, row) => {
+            if(err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            } else {
+                resolve(row.solution_repository)
+            }
+        })
+    })
+}

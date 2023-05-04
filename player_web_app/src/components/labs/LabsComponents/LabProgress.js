@@ -1,24 +1,27 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button, Col, ProgressBar, Row, Spinner, Table, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css';
 
 import API from '../../../API'
 
+//TODO: progress tab should stay updated when switching to different tab
+
 function LabProgress(props) {
     const [loading, setLoading] = useState(false)
     const [checkDone, setCheckDone] = useState(false)
     const [compiles, setCompiles] = useState(false)
-
-    /* Tests report */
-    const [total, setTotal] = useState(0)
-    const [failures, setFailures] = useState(0)
-    const [errors, setErrors] = useState(0)
-    const [skipped, setSkipped] = useState(0)
-    const [passed, setPassed] = useState(0)
+    const [studentRepoLink, setStudentRepoLink] = useState()
+    const [solutionRepoLink, setSolutionRepoLink] = useState()
     const [requirements, setRequirements] = useState([])
-    /* ----------------------- */
 
+    /* If needed, reports.testsReport contains
+        - totalTests
+        - failures
+        - errors
+        - skipped
+    */
+   
     /* Coverage report */
     const [instructionsCovered, setInstructionsCovered] = useState(0)
     const [instructionsMissed, setInstructionsMissed] = useState(0)
@@ -27,19 +30,28 @@ function LabProgress(props) {
     const [classesCovered, setClassesCovered] = useState(0)
     const [classesMissed, setClassesMissed] = useState(0)
 
+    useEffect(() => {
+
+        const getLinks = async (labId) => {
+            const studentLink = await API.getRepositoryLink(labId)
+            const solutionLink = await API.getSolutionRepositoryLink(labId)
+            setStudentRepoLink(studentLink)
+            setSolutionRepoLink(solutionLink)
+        }
+
+        getLinks(props.lab.id)
+    }, [props.lab.id])
+
     const checkProgress = async () => {
-        setLoading(true);
-        const reports = await API.test();
-        const testReport = reports['testReport'];
-        const coverageReport = reports['coverageReport']
-        setTotal(testReport['totalTests']);
-        setFailures(testReport['failures']);
-        setErrors(testReport['errors']);
-        setSkipped(testReport['skipped']);
+        setLoading(true)
+        const reports = await API.checkProgress(studentRepoLink, solutionRepoLink)
+        setCompiles(reports.compiles)
+        const testReport = reports.testsReport
+        const coverageReport = reports.coverageReport
         const reqs = Object.keys(testReport.testCases).map((key) => {
             var failed = false
             return {
-                'classname': key,
+                'classname': key.replace('it.polito.po.test.Test', ''),
                 'tests': testReport.testCases[key].reduce((acc, cur) => {
                     const tcObj = {
                         'testname': cur.name,
@@ -58,22 +70,22 @@ function LabProgress(props) {
                 'failed': failed
             }
         })
-        setRequirements(reqs);
-
-        setInstructionsCovered(coverageReport.instructionsCovered)
-        setInstructionsMissed(coverageReport.instructionsMissed)
-        setMethodsCovered(coverageReport.methodsCovered)
-        setMethodsMissed(coverageReport.methodsMissed)
-        setClassesCovered(coverageReport.classesCovered)
-        setClassesMissed(coverageReport.classesMissed)
-
+        setRequirements(reqs)
+        if (coverageReport !== null) {
+            setInstructionsCovered(coverageReport.instructionsCovered)
+            setInstructionsMissed(coverageReport.instructionsMissed)
+            setMethodsCovered(coverageReport.methodsCovered)
+            setMethodsMissed(coverageReport.methodsMissed)
+            setClassesCovered(coverageReport.classesCovered)
+            setClassesMissed(coverageReport.classesMissed)
+        }
         setLoading(false);
         setCheckDone(true);
-    };
+    }
 
-    return <>
-        {checkDone ?
-            <>
+    if (checkDone && !loading) {
+        if (compiles) {
+            return <>
                 <Row>
                     <Col>
                         <h3 style={{ marginBottom: '20px' }}>Tests report summary</h3>
@@ -95,38 +107,36 @@ function LabProgress(props) {
                     </Col>
                 </Row>
                 <Row>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px'}}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
                         <Button onClick={checkProgress}>Update progress</Button>
                     </div>
                 </Row>
             </>
-            :
-            <>
-                {
-                    loading ?
-                        <>
-                            <Spinner animation="border" role="status">
-                            </Spinner>
-                            <h4>Please wait while we check your progress...</h4>
-                        </>
-                        :
-                        <>
-                            <Row>
-                                <h4>Would you like to check your progress in the lab?</h4>
-                            </Row>
-                            <Row>
-                                <Col>
-                                    <Button
-                                        onClick={checkProgress}
-                                    >
-                                        Check progress
-                                    </Button>
-                                </Col>
-                            </Row>
-                        </>
-                }
-            </>}
-    </>
+        } else {
+            return <h5>Your solution does not compile...</h5>
+        }
+    } else if (!checkDone && !loading) {
+        return <>
+            <Row>
+                <h4>Would you like to check your progress in the lab?</h4>
+            </Row>
+            <Row>
+                <Col>
+                    <Button
+                        onClick={checkProgress}
+                    >
+                        Check progress
+                    </Button>
+                </Col>
+            </Row>
+        </>
+    } else {
+        return <>
+            <Spinner animation="border" role="status">
+            </Spinner>
+            <h4>Please wait while we check your progress...</h4>
+        </>
+    }
 }
 
 function TestsProgressBars(props) {
@@ -138,7 +148,7 @@ function TestsProgressBars(props) {
     return (
         <div style={{ marginBottom: '20px' }}>
             <ProgressBar>
-                <ProgressBar style={{ backgroundColor: colorPicker(passed) }} now={passed} />
+                <ProgressBar variant="success" now={passed} />
                 <ProgressBar variant="danger" now={failed} />
             </ProgressBar>
         </div>
@@ -165,7 +175,7 @@ function ReqReportTable(props) {
 
 function ReqReportRow(props) {
     return <tr>
-        <td>{props.req.classname.replace('Test', '')}</td>
+        <td>{props.req.classname.replace('it.polito.po.test.Test', '')}</td>
         <td style={{ backgroundColor: props.req.failed ? '#fa3939' : '#6afa39' }}>{(props.req.failed) ? 'Failed' : 'Passed'}</td>
         {
             props.req.failed ?
@@ -177,12 +187,15 @@ function ReqReportRow(props) {
 
 function ReqCommentElement(props) {
     const failingTests = props.tests.filter(t => t.failureType !== undefined)
-    const failingMethods = []
+    let failingMethods = []
     failingTests.forEach((test) => {
         const methodNameCapitalized = test.testname.replace('test', '')
-        const methodName = methodNameCapitalized.charAt(0).toLowerCase() + methodNameCapitalized.slice(1)
+        var methodName = methodNameCapitalized.charAt(0).toLowerCase() + methodNameCapitalized.slice(1)
+        if (/\d$/.test(methodName))
+            methodName = methodName.slice(0, -1);
         failingMethods.push(methodName)
     })
+    failingMethods = [...new Set(failingMethods)];
 
     return <td>
         <div>There seem to be a problem with the following required methods: </div>

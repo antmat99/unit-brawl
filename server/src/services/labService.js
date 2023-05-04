@@ -215,62 +215,72 @@ exports.stopLabIfExpired = () => {
 
 /* --------------------------------------------------------------- */
 
-exports.checkProgress = async () => {
-    // TODO: use actual repo links
+exports.getSolutionRepositoryLink = async (labId) => {
+    try {
+        return await labDao.getSolutionRepositoryLink(labId);
+    } catch (e) {
+        throw new Exception(500, e.message)
+    }
+}
+
+exports.checkProgress = async (studentId, studentRepoLink, solutionRepoLink) => {
     var result = {
         compiles: true,
-        testReport: {},
+        testsReport: {},
         coverageReport: {}
     }
 
-    try {
-        // 1. Clone student repo
-        // 2. Student solution compiles?
-        //  YES -> continue, NO -> return value to communicate it
-        // 3. Clone solution repo
-        // 4. Copy solutions tests, requirement per requirement
-        // 5. Check which pass
-        // 6. Return value to communicate it
+    var rawReports = {
+        testsReport: {},
+        coverageReport: {}
+    }
 
-        // TODO: copy ideal solution in test/ideal_solution?
-        console.log('Cloning user\'s repository...')
-        await shellService.cloneRepoInDirectory('https://gitlab.com/matteofavretto/mountain-huts.git', '/check/student')
-        console.log('Successfully cloned student\'s repository')
-        const compilationCheck = await this.checkCompile()
-        if (compilationCheck) {
-            console.log('Cloning solution\'s repository...')
-            await shellService.cloneRepoInDirectory('https://gitlab.com/matteofavretto/mountain-huts-solution.git', '/check/ideal')
-            console.log('Successfully cloned solution\'s repository')
-            try {
-                const reports = this.runTests()
-                result.testReport = this.analyzeTestReport(reports.testReport)
-                result.coverageReport = this.analyzeCoverageReport(reports.coverageReport)
-                //cleanup()
-                return result
-            } catch (e) {
-                console.log('Error running tests: ' + e)
-                //cleanup()
-            }
-            //cleanup()
-            return result
-        } else {
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
+
+    // TODO: move ideal solution to test/ideal_solution
+    // TODO: before cloning ideal solution, check if there are updates to be fetched
+
+    try {
+        studentRepoLink = studentRepoLink + '.git'
+        solutionRepoLink = solutionRepoLink + '.git'
+        await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
+        console.log('Checking if student\'s solution compiles...')
+        result.compiles = await this.checkCompile(studentId)
+        if(!result.compiles) {
             console.log('Student\'s solution does not compile')
-            //cleanup()
-            result.compiles = false
+            cleanup(studentId)
             return result
         }
-    } catch (e) {
-        console.error('Error checking progress: ' + e)
-        //cleanup()
+        console.log('Student\'s solution compiles')
+        await shellService.cloneRepoInDirectory(solutionRepoLink, '/check/ideal')
+        fileService.copyDirectoryFiles('test/packages/check/ideal/src/test/java/it/polito/po/test', `test/packages/check/${studentId}/src/test/java/it/polito/po/test`)
+        console.log('Running ideal tests...')
+        try {
+            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X clean test -Dtest="AllTests"`);
+            console.log('Ideal tests passed')
+        } catch(e) {
+            console.log('Ideal tests failed')
+        }
+        rawReports.testsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+        console.log('Running student\'s tests...')
+        try {
+            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X clean test -Dtest="TestClass"`);
+            console.log('Student\'s tests passed')
+        } catch(e) {
+            console.log('Student\'s tests failed')
+        }
+        rawReports.coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
+        result.testsReport = this.analyzeTestReport(rawReports.testsReport)
+        result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
+        cleanup(studentId)
+        return result
+    } catch(e) {
+        console.log('ERROR: ' + e)
+        cleanup(studentId)
     }
 }
 
-function cleanup() {
-    fileService.clearDirectory('test/packages/check')
-    fileService.deleteDirectory('test/packages/check')
-}
-
-exports.test = async () => {
+exports.test = async (studentId) => {
     var result = {
         compiles: true,
         testReport: {},
@@ -278,63 +288,35 @@ exports.test = async () => {
     }
 
     try {
-        const testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
-        const coverageReport = fs.readFileSync('test/packages/check/student/lab/target/site/jacoco/jacoco.xml')
+        const testReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+        const coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
         result.testReport = this.analyzeTestReport(testReport)
         result.coverageReport = this.analyzeCoverageReport(coverageReport)
         return result
     } catch (e) {
         console.error('Error checking progress: ' + e)
     }
-} 
-
-exports.runTests = () => {
-    // We now have test/packages/check/student/lab and test/packages/check/ideal/lab
-    // We need to copy .../ideal/lab/src/test
-    // TODO use actual repo
-    const correctProjectDirPath = "C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\student\\lab"
-    console.log('Copying ideal tests in student\'s repo...')
-    fileService.copyDirectoryFiles('test/packages/check/ideal/lab/src/test/java', 'test/packages/check/student/lab/src/test/java')
-    console.log('Running tests...')
-    try {
-        e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X clean test -Dtest="AllTests.java"`);
-        console.log('Tests passed - Getting results...')
-        const reports = {}
-        reports.testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
-        reports.coverageReport = fs.readFileSync('test/packages/check/student/lab/target/site/jacoco/jacoco.xml')
-        return reports
-    } catch (e) {
-        // TODO: check JaCoCo report when tests fail
-        console.log('Tests failed - Getting results...')
-        const reports = {}
-        reports.testReport = fs.readFileSync('test/packages/check/student/lab/target/surefire-reports/TEST-AllTests.xml')
-        //reports.coverageReport = fs.readFileSync('test/packages/check/student/lab/target/site/jacoco/jacoco.xml')
-        return reports
-    }   
 }
 
-exports.checkCompile = async () => {
+exports.checkCompile = async (studentId) => {
     try {
-        console.log('Checking if student\'s solution compiles...')
-        shellService.mavenCompile('test/packages/check/student/lab')
-        console.log('Student\'s solution compiles')
+        shellService.mavenCompile(`test/packages/check/${studentId}`)
         return true
     } catch (e) {
-        console.error('Student\'s solution does not compile: ' + e)
         return false
     }
 }
 
 exports.analyzeTestReport = (rep) => {
 
-    const options = { 
+    const options = {
         ignoreAttributes: false,
         attributeNamePrefix: "",
-        parseNodeValue: true 
+        parseNodeValue: true
     };
     const parser = new xml.XMLParser(options);
     const report = parser.parse(rep)
-    
+
     const testsuite = report['testsuite']
 
     const totalTests = testsuite['tests']
@@ -347,7 +329,7 @@ exports.analyzeTestReport = (rep) => {
     const testcasesObj = testcases.map(tc => {
         const tcObj = {}
         Object.keys(tc).forEach(key => {
-            if(key !== 'failure') {
+            if (key !== 'failure') {
                 tcObj[key] = tc[key]
             } else {
                 tcObj['failureMessage'] = tc[key]['message']
@@ -358,41 +340,14 @@ exports.analyzeTestReport = (rep) => {
         return tcObj
     })
 
-    exports.analyzeCoverageReport = (rep) => {
-
-        const options = { 
-            ignoreAttributes: false,
-            attributeNamePrefix: "",
-            parseNodeValue: true 
-        };
-        const parser = new xml.XMLParser(options);
-        const reportObj = parser.parse(rep)
-        const report = reportObj.report
-
-        const instructionCounter = report.counter.find(counter => counter.type === 'INSTRUCTION')
-        const methodCounter = report.counter.find(counter => counter.type === 'METHOD')
-        const classCounter = report.counter.find(counter => counter.type === 'CLASS')
-
-        const result = {
-            'instructionsCovered': instructionCounter.covered,
-            'instructionsMissed': instructionCounter.missed,
-            'methodsCovered': methodCounter.covered,
-            'methodsMissed': methodCounter.missed,
-            'classesCovered': classCounter.covered,
-            'classesMissed': classCounter.missed
-        }
-
-        return result
-    }
-
     const groupedByClassname = testcasesObj.reduce((acc, tc) => {
         const key = tc.classname;
         if (!acc[key]) {
-          acc[key] = [];
+            acc[key] = [];
         }
         acc[key].push(tc);
         return acc;
-      }, {});
+    }, {});
 
     const result = {
         'totalTests': totalTests,
@@ -402,4 +357,40 @@ exports.analyzeTestReport = (rep) => {
         'testCases': groupedByClassname
     }
     return result
+}
+
+exports.analyzeCoverageReport = (rep) => {
+
+    const options = {
+        ignoreAttributes: false,
+        attributeNamePrefix: "",
+        parseNodeValue: true
+    };
+    const parser = new xml.XMLParser(options);
+    const reportObj = parser.parse(rep)
+    const report = reportObj.report
+
+    const instructionCounter = report.counter.find(counter => counter.type === 'INSTRUCTION')
+    const methodCounter = report.counter.find(counter => counter.type === 'METHOD')
+    const classCounter = report.counter.find(counter => counter.type === 'CLASS')
+
+    const result = {
+        'instructionsCovered': instructionCounter.covered,
+        'instructionsMissed': instructionCounter.missed,
+        'methodsCovered': methodCounter.covered,
+        'methodsMissed': methodCounter.missed,
+        'classesCovered': classCounter.covered,
+        'classesMissed': classCounter.missed
+    }
+
+    return result
+}
+
+/* Utility */
+function cleanup(studentId) {
+    fileService.clearDirectory(`test/packages/check/${studentId}`)
+    fileService.deleteDirectory(`test/packages/check/${studentId}`)
+    fileService.clearDirectory(`test/packages/check/ideal`)
+    fileService.deleteDirectory(`test/packages/check/ideal`)
+    fileService.deleteDirectory(`test/packages/check`)
 }

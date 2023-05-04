@@ -119,9 +119,15 @@ function LabMain(props) {
                             <Nav.Item>
                                 <Nav.Link eventKey={MainComponents.Trace}>Trace</Nav.Link>
                             </Nav.Item>
-                            <Nav.Item>
-                                <Nav.Link eventKey={MainComponents.Progress}>Progress</Nav.Link>
-                            </Nav.Item>
+                            {
+                                (!lab.expired && (labsAttendedIds.includes(lab.id))) ?
+                                    <>
+                                        <Nav.Item>
+                                            <Nav.Link eventKey={MainComponents.Progress}>Progress</Nav.Link>
+                                        </Nav.Item>
+                                    </> 
+                                    : ''
+                            }
                             {
                                 lab.expired ?
                                     <>
@@ -140,7 +146,7 @@ function LabMain(props) {
                 </Row>
                 <Row>
                     <Col lg={12}>
-                         {component == MainComponents.Trace ?
+                        {component == MainComponents.Trace ?
                             <MainComponentTrace trace={lab.trace} />
                             :
                             ''
@@ -158,10 +164,12 @@ function LabMain(props) {
                             :
                             ''
                         }
-                        {component == MainComponents.Progress ? 
-                            <MainComponentProgress/>
-                        :
-                        ''}
+                        {component == MainComponents.Progress ?
+                            <MainComponentProgress
+                                lab={lab}
+                            />
+                            :
+                            ''}
                     </Col>
                 </Row>
             </Container>
@@ -215,7 +223,7 @@ function MainComponentResult(props) {
 
 function MainComponentProgress(props) {
     return (
-        <LabProgress/>
+        <LabProgress lab={props.lab} />
     )
 }
 

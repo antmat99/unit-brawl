@@ -4,6 +4,7 @@ import LabMain from "./LabMain";
 import { Container, Row, Col, Modal, Button, Form, Alert } from 'react-bootstrap'
 import API from "../../API";
 
+//TODO: fix all forms
 
 function Labs() {
     const [labs, setLabs] = useState([])
@@ -15,6 +16,8 @@ function Labs() {
     //partial leaderboard
     const [userLabRegionLeaderboard, setUserLabRegionLeaderboard] = useState([]);
     const [repositoryLink, setRepositoryLink] = useState([])
+    const [activeRepoLink, setActiveRepoLink] = useState('')
+    const [activeSolRepoLink, setActiveSolRepoLink] = useState('')
 
 
     useEffect(() => {
@@ -33,7 +36,6 @@ function Labs() {
             setDirty(false)
         }
     }, [dirty])
-
 
     useEffect(() => {
         API.getUserLabsAttended()
@@ -88,11 +90,11 @@ function Labs() {
                     <LabList labs={labs} selectLab={selectLab} />
                 </Col>
                 <Col lg={9}>
-                    <LabMain lab={selectedLab} labsAttendedIds={labsAttendedIds} joinLab={openModalJoinLab} userLabRegionLeaderboard={userLabRegionLeaderboard} editRepository={openModalEditRepository} />
+                    <LabMain lab={selectedLab} studentRepoLink={activeRepoLink} solutionRepoLink={activeSolRepoLink} labsAttendedIds={labsAttendedIds} joinLab={openModalJoinLab} userLabRegionLeaderboard={userLabRegionLeaderboard} editRepository={openModalEditRepository} />
                 </Col>
             </Row>
-            <ModalJoinLab lab={selectedLab} show={showModalJoinLab} close={closeModalJoinLab} />
-            <ModalEditRepository lab={selectedLab} show={showModalEditRepository} close={closeModalEditRepository} actualLink={repositoryLink} />
+            <ModalJoinLab lab={selectedLab} show={showModalJoinLab} close={closeModalJoinLab} setActiveRepoLink={setActiveRepoLink} setActiveSolRepoLink={setActiveSolRepoLink}/>
+            <ModalEditRepository lab={selectedLab} show={showModalEditRepository} close={closeModalEditRepository} actualLink={repositoryLink} setActiveRepoLink={setActiveRepoLink}/>
         </Container>
     )
 }
@@ -198,6 +200,7 @@ function ModalEditRepository(props) {
     }
 
     const handleSubmit = async (event) => {
+        event.preventDefault()
         if (isValidLink) {
             setBackendError(false);
             setBackendErrorMessage('');

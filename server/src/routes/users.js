@@ -4,6 +4,7 @@ const express = require("express");
 const router = express.Router();
 
 const userController = require('../controllers/userController');
+const labController = require('../controllers/labController')
  
 /* routes */
 
@@ -55,6 +56,8 @@ router.get('/labs/regionLeaderboard',userController.getUserLabRegionLeaderboard)
 router.get('/labs/repositoryLink',userController.getUserLabRepositoryLink)
 
 router.put('/labs/repositoryLink',userController.updateUserLabRepositoryLink)
+
+router.get('/labs/solRepositoryLink', labController.getSolutionRepositoryLink)
 
 
 module.exports = router;
