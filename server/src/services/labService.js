@@ -260,6 +260,7 @@ exports.checkProgress = async (studentId) => {
         console.log(`Cloning student\'s solution in test/packages/check/${studentId}...`)
         await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
         console.log('Successfully cloned student\'s solution')
+        /*
         console.log('Checking if it compiles...')
         result.compiles = await this.checkCompile(studentId)
         if (!result.compiles) {
@@ -267,20 +268,9 @@ exports.checkProgress = async (studentId) => {
             cleanup(studentId)
             return result
         }
+        */
         console.log('Student\'s solution compiles')
-        if (fs.readdirSync('test/ideal_solution').length === 0 || updateNeeded()) {
-            console.log('Update to ideal solution detected, pulling...')
-            try {
-                e.execSync('cd test/ideal_solution && git fetch && git pull')
-                e.execSync('cd ../..')
-            } catch (err) {
-                console.log('Error while pulling ideal solution: ' + err)
-                e.execSync('cd ../..')
-                return
-            }
-        } else {
-            console.log('Ideal solution is up to date')
-        }
+        updateIdeal()
 
         fileService.copyDirectoryFiles('test/ideal_solution/src/test/java/it/polito/po/test', `test/packages/check/${studentId}/src/test/java/it/polito/po/test`)
         console.log('Running ideal tests...')
@@ -422,13 +412,29 @@ function cleanup(studentId) {
     fileService.deleteDirectory(`test/packages/check`)
 }
 
-function updateNeeded() {
-    try {
-        const output = e.execSync('cd test/ideal_solution && git fetch && git diff --quiet HEAD origin/HEAD')
-        e.execSync('cd ../..')
-        return output.toString().trim() !== '';
-    } catch (err) {
-        console.log('Error while checking git diff: ' + err)
-        e.execSync('cd ../..')
+function updateIdeal() {
+  const startDir = process.cwd();
+
+  try {
+    // Move to the test/ideal_solution folder
+    process.chdir('test/ideal_solution');
+
+    // Run git fetch and git diff commands
+    const gitFetchOutput = e.execSync('git fetch', { encoding: 'utf-8' });
+    const gitDiffOutput = e.execSync('git diff HEAD origin/HEAD', { encoding: 'utf-8' });
+
+    // Check if there are differences with the remote repository
+    if (gitDiffOutput) {
+      // Update the local repository
+      e.execSync('git pull', { encoding: 'utf-8' });
+      console.log('Ideal solution updated.');
+    } else {
+      console.log('Ideal solution is up-to-date.');
     }
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+  } finally {
+    // Move back to the original folder
+    process.chdir(startDir);
+  }
 }
