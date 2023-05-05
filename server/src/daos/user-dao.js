@@ -651,3 +651,19 @@ exports.addMoney = (userId, quantity) => {
         });
     });
 };
+
+exports.getActiveLabStudentLink = (studentId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT user_lab.repository \
+                        FROM user_lab, lab \
+                        WHERE user_lab.user_id = ? AND user_lab.lab_id = lab.id AND lab.active = 1'
+        db.get(sql, [studentId], (err, row) => {
+            if (err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            } else {
+                resolve(row.repository)
+            }
+        })
+    })
+}

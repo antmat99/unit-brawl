@@ -12,11 +12,25 @@ function LabProgress(props) {
     const [loading, setLoading] = useState(false)
     const [checkDone, setCheckDone] = useState(false)
     const [compiles, setCompiles] = useState(false)
+    const [requirements, setRequirements] = useState()
+    const [instructionsCovered, setInstructionsCovered] = useState()
+    const [instructionsMissed, setInstructionsMissed] = useState()
+    const [methodsCovered, setMethodsCovered] = useState()
+    const [methodsMissed, setMethodsMissed] = useState()
+    const [classesCovered, setClassesCovered] = useState()
+    const [classesMissed, setClassesMissed] = useState()
 
     useEffect(() => {
         setLoading(props.labProgressState.loading)
         setCheckDone(props.labProgressState.checkDone)
         setCompiles(props.labProgressState.compiles)
+        setRequirements(props.labProgressState.requirements)
+        setInstructionsCovered(props.labProgressState.instructionsCovered)
+        setInstructionsMissed(props.labProgressState.instructionsMissed)
+        setMethodsCovered(props.labProgressState.methodsCovered)
+        setMethodsMissed(props.labProgressState.methodsMissed)
+        setClassesCovered(props.labProgressState.classesCovered)
+        setClassesMissed(props.labProgressState.classesMissed)
     }, [props.labProgressState])
 
     const checkProgress = async () => {
@@ -73,6 +87,13 @@ function LabProgress(props) {
             classesMissed: classesMissed
         }
         props.handleCheckDone(reportContent)
+        setRequirements(requirements)
+        setInstructionsCovered(instructionsCovered)
+        setInstructionsMissed(instructionsMissed)
+        setMethodsCovered(methodsCovered)
+        setMethodsMissed(methodsMissed)
+        setClassesCovered(classesCovered)
+        setClassesMissed(classesMissed)
         setCheckDone(true)
         setLoading(false)
     }
@@ -83,20 +104,20 @@ function LabProgress(props) {
                 <Row>
                     <Col>
                         <h3 style={{ marginBottom: '20px' }}>Tests report summary</h3>
-                        <TestsProgressBars requirements={props.labProgressState.requirements} />
+                        <TestsProgressBars requirements={requirements} />
                         <ReqReportTable
-                            requirements={props.labProgressState.requirements}
+                            requirements={requirements}
                         />
                     </Col>
                     <Col>
                         <h3 style={{ marginBottom: '20px' }}>Coverage report summary</h3>
                         <CoverageDashboard
-                            instrCovered={props.labProgressState.instructionsCovered}
-                            instrMissed={props.labProgressState.instructionsMissed}
-                            methodsCovered={props.labProgressState.methodsCovered}
-                            methodsMissed={props.labProgressState.methodsMissed}
-                            classesCovered={props.labProgressState.classesCovered}
-                            classesMissed={props.labProgressState.classesMissed}
+                            instrCovered={instructionsCovered}
+                            instrMissed={instructionsMissed}
+                            methodsCovered={methodsCovered}
+                            methodsMissed={methodsMissed}
+                            classesCovered={classesCovered}
+                            classesMissed={classesMissed}
                         />
                     </Col>
                 </Row>

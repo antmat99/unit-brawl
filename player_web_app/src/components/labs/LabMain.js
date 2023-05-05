@@ -65,9 +65,6 @@ function LabMain(props) {
             classesMissed: data.classesMissed
         })
     }
-    
-    const [studentRepoLink, setStudentRepoLink] = useState()
-    const [solutionRepoLink, setSolutionRepoLink] = useState()
 
     useEffect(() => {
         if (lab !== undefined) {
@@ -77,14 +74,7 @@ function LabMain(props) {
     }, [lab])
 
     useEffect(() => {
-        const getLinks = async (labId) => {
-            const studentLink = await API.getRepositoryLink(labId)
-            const solutionLink = await API.getSolutionRepositoryLink(labId)
-            setStudentRepoLink(studentLink)
-            setSolutionRepoLink(solutionLink)
-        }
         if (dirty) {
-            getLinks(lab.id)
             createLabElement(lab);
             setDirty(false);
         }
@@ -110,8 +100,6 @@ function LabMain(props) {
     };
 
     const createLabElement = (lab) => {
-        console.log('Student repo link: ' + studentRepoLink)
-        console.log('Solution repo link: ' + solutionRepoLink)
         setComponent(MainComponents.Trace)
         const ret = []
         ret.push(
@@ -215,8 +203,6 @@ function LabMain(props) {
                                 labProgressState={labProgressState}
                                 handleCheckStarted={handleCheckStarted}
                                 handleCheckDone={handleCheckDone}
-                                studentRepoLink={studentRepoLink}
-                                solutionRepoLink={solutionRepoLink}
                             />
                         }
                     </Col>

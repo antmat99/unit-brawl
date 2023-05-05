@@ -16,8 +16,6 @@ function Labs() {
     //partial leaderboard
     const [userLabRegionLeaderboard, setUserLabRegionLeaderboard] = useState([]);
     const [repositoryLink, setRepositoryLink] = useState([])
-    const [activeRepoLink, setActiveRepoLink] = useState('')
-    const [activeSolRepoLink, setActiveSolRepoLink] = useState('')
 
 
     useEffect(() => {
@@ -90,11 +88,11 @@ function Labs() {
                     <LabList labs={labs} selectLab={selectLab} />
                 </Col>
                 <Col lg={9}>
-                    <LabMain lab={selectedLab} studentRepoLink={activeRepoLink} solutionRepoLink={activeSolRepoLink} labsAttendedIds={labsAttendedIds} joinLab={openModalJoinLab} userLabRegionLeaderboard={userLabRegionLeaderboard} editRepository={openModalEditRepository} />
+                    <LabMain lab={selectedLab} labsAttendedIds={labsAttendedIds} joinLab={openModalJoinLab} userLabRegionLeaderboard={userLabRegionLeaderboard} editRepository={openModalEditRepository} />
                 </Col>
             </Row>
-            <ModalJoinLab lab={selectedLab} show={showModalJoinLab} close={closeModalJoinLab} setActiveRepoLink={setActiveRepoLink} setActiveSolRepoLink={setActiveSolRepoLink}/>
-            <ModalEditRepository lab={selectedLab} show={showModalEditRepository} close={closeModalEditRepository} actualLink={repositoryLink} setActiveRepoLink={setActiveRepoLink}/>
+            <ModalJoinLab lab={selectedLab} show={showModalJoinLab} close={closeModalJoinLab} />
+            <ModalEditRepository lab={selectedLab} show={showModalEditRepository} close={closeModalEditRepository} actualLink={repositoryLink} />
         </Container>
     )
 }

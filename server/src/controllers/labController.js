@@ -128,7 +128,7 @@ exports.getSolutionRepositoryLink = async (req, res) => {
 
 exports.checkProgress = async (req, res) => {
     try {
-        const result = await labService.checkProgress(req.user.id, req.body.studentRepoLink, req.body.solutionRepoLink)
+        const result = await labService.checkProgress(req.user.id)
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json(result)
     } catch(e) {

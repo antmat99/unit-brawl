@@ -373,3 +373,19 @@ exports.getSolutionRepositoryLink = (labId) => {
         })
     })
 }
+
+exports.getActiveLabSolutionLink = () => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT lab_ideal_solution.solution_repository \
+                        FROM lab_ideal_solution, lab \
+                        WHERE lab.active = 1 AND lab.id = lab_ideal_solution.lab_id'
+        db.get(sql, (err, row) => {
+            if (err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            } else {
+                resolve(row.solution_repository)
+            }
+        })
+    })
+}
