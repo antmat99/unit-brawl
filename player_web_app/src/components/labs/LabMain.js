@@ -3,6 +3,7 @@ import { ProgressBar, Container, Row, Col, Nav, Button } from 'react-bootstrap';
 import Leaderboard from "../../components/common/Leaderboard"
 import LabProgress from './LabsComponents/LabProgress'
 import Countdown from 'react-countdown';
+import API from '../../API'
 
 
 const dayjs = require('dayjs');
@@ -22,16 +23,68 @@ function LabMain(props) {
     const [labElement, setLabElement] = useState([])
     const [component, setComponent] = useState(MainComponents.Trace)
     const [dirty, setDirty] = useState(false);
+    const [labProgressState, setLabProgressState] = useState({
+        loading: false,
+        checkDone: false,
+        compiles: false,
+        requirements: [],
+        instructionsCovered: 0,
+        instructionsMissed: 0,
+        methodsCovered: 0,
+        methodsMissed: 0,
+        classesCovered: 0,
+        classesMissed: 0
+    })
+
+    function handleCheckStarted() {
+        setLabProgressState({
+            loading: true,
+            checkDone: false,
+            compiles: false,
+            requirements: [],
+            instructionsCovered: 0,
+            instructionsMissed: 0,
+            methodsCovered: 0,
+            methodsMissed: 0,
+            classesCovered: 0,
+            classesMissed: 0
+        })
+    }
+
+    function handleCheckDone(data) {
+        setLabProgressState({
+            loading: false,
+            checkDone: true,
+            compiles: data.compiles,
+            requirements: data.requirements,
+            instructionsCovered: data.instructionsCovered,
+            instructionsMissed: data.instructionsMissed,
+            methodsCovered: data.methodsCovered,
+            methodsMissed: data.methodsMissed,
+            classesCovered: data.classesCovered,
+            classesMissed: data.classesMissed
+        })
+    }
+    
+    const [studentRepoLink, setStudentRepoLink] = useState()
+    const [solutionRepoLink, setSolutionRepoLink] = useState()
 
     useEffect(() => {
-        if (lab != undefined) {
+        if (lab !== undefined) {
             setLabElement(undefined)
             setDirty(true)
         }
     }, [lab])
 
     useEffect(() => {
+        const getLinks = async (labId) => {
+            const studentLink = await API.getRepositoryLink(labId)
+            const solutionLink = await API.getSolutionRepositoryLink(labId)
+            setStudentRepoLink(studentLink)
+            setSolutionRepoLink(solutionLink)
+        }
         if (dirty) {
+            getLinks(lab.id)
             createLabElement(lab);
             setDirty(false);
         }
@@ -57,6 +110,8 @@ function LabMain(props) {
     };
 
     const createLabElement = (lab) => {
+        console.log('Student repo link: ' + studentRepoLink)
+        console.log('Solution repo link: ' + solutionRepoLink)
         setComponent(MainComponents.Trace)
         const ret = []
         ret.push(
@@ -116,60 +171,54 @@ function LabMain(props) {
                                 setDirty(true);
                             }}
                         >
+                            {/*TODO: show requirements in trace section*/}
                             <Nav.Item>
                                 <Nav.Link eventKey={MainComponents.Trace}>Trace</Nav.Link>
                             </Nav.Item>
                             {
-                                (!lab.expired && (labsAttendedIds.includes(lab.id))) ?
-                                    <>
-                                        <Nav.Item>
-                                            <Nav.Link eventKey={MainComponents.Progress}>Progress</Nav.Link>
-                                        </Nav.Item>
-                                    </> 
-                                    : ''
+                                (!lab.expired && (labsAttendedIds.includes(lab.id))) &&
+                                <>
+                                    <Nav.Item>
+                                        <Nav.Link eventKey={MainComponents.Progress}>Progress</Nav.Link>
+                                    </Nav.Item>
+                                </>
                             }
                             {
-                                lab.expired ?
-                                    <>
-                                        <Nav.Item>
-                                            <Nav.Link eventKey={MainComponents.Leaderboard}>Leaderboard</Nav.Link>
-                                        </Nav.Item>
-                                        <Nav.Item>
-                                            <Nav.Link eventKey={MainComponents.MyResults}>My results</Nav.Link>
-                                        </Nav.Item>
-                                    </>
-                                    :
-                                    ''
+                                lab.expired &&
+                                <>
+                                    <Nav.Item>
+                                        <Nav.Link eventKey={MainComponents.Leaderboard}>Leaderboard</Nav.Link>
+                                    </Nav.Item>
+                                    <Nav.Item>
+                                        <Nav.Link eventKey={MainComponents.MyResults}>My results</Nav.Link>
+                                    </Nav.Item>
+                                </>
                             }
                         </Nav>
                     </Col>
                 </Row>
                 <Row>
                     <Col lg={12}>
-                        {component == MainComponents.Trace ?
-                            <MainComponentTrace trace={lab.trace} />
-                            :
-                            ''
-                        }
-                        {component == MainComponents.Leaderboard ?
-                            <MainComponentLeaderboard leaderboard={lab.leaderboard} /> :
-                            ''
-                        }
-                        {component == MainComponents.MyResults ?
-                            <MainComponentResult result={lab.userResult}
+                        {component === MainComponents.Trace && <MainComponentTrace trace={lab.trace} />}
+                        {component === MainComponents.Leaderboard && <MainComponentLeaderboard leaderboard={lab.leaderboard} />}
+                        {component === MainComponents.MyResults &&
+                            <MainComponentResult
+                                result={lab.userResult}
                                 lab={lab}
                                 labsAttendedIds={labsAttendedIds}
                                 resultLeaderboard={userLabRegionLeaderboard}
                             />
-                            :
-                            ''
                         }
-                        {component == MainComponents.Progress ?
+                        {component === MainComponents.Progress &&
                             <MainComponentProgress
                                 lab={lab}
+                                labProgressState={labProgressState}
+                                handleCheckStarted={handleCheckStarted}
+                                handleCheckDone={handleCheckDone}
+                                studentRepoLink={studentRepoLink}
+                                solutionRepoLink={solutionRepoLink}
                             />
-                            :
-                            ''}
+                        }
                     </Col>
                 </Row>
             </Container>
@@ -180,7 +229,7 @@ function LabMain(props) {
     return (
         <>
             {
-                lab == undefined ?
+                lab === undefined ?
                     ''
                     :
                     labElement
@@ -209,7 +258,7 @@ function MainComponentResult(props) {
     return (
         <>
             {
-                (props.result != undefined && props.labsAttendedIds.includes(props.lab.id)) ?
+                (props.result !== undefined && props.labsAttendedIds.includes(props.lab.id)) ?
                     <>
                         <Leaderboard resultList={props.resultLeaderboard} />
                     </>
@@ -222,8 +271,16 @@ function MainComponentResult(props) {
 }
 
 function MainComponentProgress(props) {
+
     return (
-        <LabProgress lab={props.lab} />
+        <LabProgress
+            lab={props.lab}
+            labProgressState={props.labProgressState}
+            handleCheckStarted={props.handleCheckStarted}
+            handleCheckDone={props.handleCheckDone}
+            studentRepoLink={props.studentRepoLink}
+            solutionRepoLink={props.solutionRepoLink}
+        />
     )
 }
 

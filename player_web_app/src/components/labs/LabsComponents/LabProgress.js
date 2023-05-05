@@ -8,51 +8,36 @@ import API from '../../../API'
 //TODO: progress tab should stay updated when switching to different tab
 
 function LabProgress(props) {
+
     const [loading, setLoading] = useState(false)
     const [checkDone, setCheckDone] = useState(false)
     const [compiles, setCompiles] = useState(false)
-    const [studentRepoLink, setStudentRepoLink] = useState()
-    const [solutionRepoLink, setSolutionRepoLink] = useState()
-    const [requirements, setRequirements] = useState([])
-
-    /* If needed, reports.testsReport contains
-        - totalTests
-        - failures
-        - errors
-        - skipped
-    */
-   
-    /* Coverage report */
-    const [instructionsCovered, setInstructionsCovered] = useState(0)
-    const [instructionsMissed, setInstructionsMissed] = useState(0)
-    const [methodsCovered, setMethodsCovered] = useState(0)
-    const [methodsMissed, setMethodsMissed] = useState(0)
-    const [classesCovered, setClassesCovered] = useState(0)
-    const [classesMissed, setClassesMissed] = useState(0)
 
     useEffect(() => {
-
-        const getLinks = async (labId) => {
-            const studentLink = await API.getRepositoryLink(labId)
-            const solutionLink = await API.getSolutionRepositoryLink(labId)
-            setStudentRepoLink(studentLink)
-            setSolutionRepoLink(solutionLink)
-        }
-
-        getLinks(props.lab.id)
-    }, [props.lab.id])
+        setLoading(props.labProgressState.loading)
+        setCheckDone(props.labProgressState.checkDone)
+        setCompiles(props.labProgressState.compiles)
+    }, [props.labProgressState])
 
     const checkProgress = async () => {
         setLoading(true)
-        const reports = await API.checkProgress(studentRepoLink, solutionRepoLink)
+        props.handleCheckStarted()
+        const reports = await API.checkProgress(props.studentRepoLink, props.solutionRepoLink)
         setCompiles(reports.compiles)
-        const testReport = reports.testsReport
+        const testsReport = reports.testsReport
+        /* If needed, reports.testsReport contains
+            - totalTests
+            - failures
+            - errors
+            - skipped
+        */
+
         const coverageReport = reports.coverageReport
-        const reqs = Object.keys(testReport.testCases).map((key) => {
+        const requirements = Object.keys(testsReport.testCases).map((key) => {
             var failed = false
             return {
                 'classname': key.replace('it.polito.po.test.Test', ''),
-                'tests': testReport.testCases[key].reduce((acc, cur) => {
+                'tests': testsReport.testCases[key].reduce((acc, cur) => {
                     const tcObj = {
                         'testname': cur.name,
                     }
@@ -70,17 +55,26 @@ function LabProgress(props) {
                 'failed': failed
             }
         })
-        setRequirements(reqs)
-        if (coverageReport !== null) {
-            setInstructionsCovered(coverageReport.instructionsCovered)
-            setInstructionsMissed(coverageReport.instructionsMissed)
-            setMethodsCovered(coverageReport.methodsCovered)
-            setMethodsMissed(coverageReport.methodsMissed)
-            setClassesCovered(coverageReport.classesCovered)
-            setClassesMissed(coverageReport.classesMissed)
+        const instructionsCovered = (coverageReport !== null) ? coverageReport.instructionsCovered : undefined
+        const instructionsMissed = (coverageReport !== null) ? coverageReport.instructionsMissed : undefined
+        const methodsCovered = (coverageReport !== null) ? coverageReport.methodsCovered : undefined
+        const methodsMissed = (coverageReport !== null) ? coverageReport.methodsMissed : undefined
+        const classesCovered = (coverageReport !== null) ? coverageReport.classesCovered : undefined
+        const classesMissed = (coverageReport !== null) ? coverageReport.classesMissed : undefined
+
+        const reportContent = {
+            compiles: reports.compiles,
+            requirements: requirements,
+            instructionsCovered: instructionsCovered,
+            instructionsMissed: instructionsMissed,
+            methodsCovered: methodsCovered,
+            methodsMissed: methodsMissed,
+            classesCovered: classesCovered,
+            classesMissed: classesMissed
         }
-        setLoading(false);
-        setCheckDone(true);
+        props.handleCheckDone(reportContent)
+        setCheckDone(true)
+        setLoading(false)
     }
 
     if (checkDone && !loading) {
@@ -89,20 +83,20 @@ function LabProgress(props) {
                 <Row>
                     <Col>
                         <h3 style={{ marginBottom: '20px' }}>Tests report summary</h3>
-                        <TestsProgressBars requirements={requirements} />
+                        <TestsProgressBars requirements={props.labProgressState.requirements} />
                         <ReqReportTable
-                            requirements={requirements}
+                            requirements={props.labProgressState.requirements}
                         />
                     </Col>
                     <Col>
                         <h3 style={{ marginBottom: '20px' }}>Coverage report summary</h3>
                         <CoverageDashboard
-                            instrCovered={instructionsCovered}
-                            instrMissed={instructionsMissed}
-                            methodsCovered={methodsCovered}
-                            methodsMissed={methodsMissed}
-                            classesCovered={classesCovered}
-                            classesMissed={classesMissed}
+                            instrCovered={props.labProgressState.instructionsCovered}
+                            instrMissed={props.labProgressState.instructionsMissed}
+                            methodsCovered={props.labProgressState.methodsCovered}
+                            methodsMissed={props.labProgressState.methodsMissed}
+                            classesCovered={props.labProgressState.classesCovered}
+                            classesMissed={props.labProgressState.classesMissed}
                         />
                     </Col>
                 </Row>
