@@ -23,8 +23,10 @@ exports.cloneRepoInDirectory = async (linkToRepo, directoryName) => {
     const correctPath = path.join(parentFolder, directoryName)
     console.log('Cloning repo ' + linkToRepo + ' into ' + correctPath);
     const { stdout, stderr } = await exec(`git clone ${linkToRepo} ${correctPath}`);
+    /*
     console.log(`stdout clone: ${stdout}`);
     console.log(`stderr clone: ${stderr}`);
+    */
 }
 
 exports.getTestPath = (project_path) => {

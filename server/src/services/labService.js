@@ -67,7 +67,6 @@ exports.getAllLabsWithIdealSolution = async () => {
                 lab.solution_repository
             )
         }))
-        console.log(res)
         return res;
     } catch (e) {
         throw new Exception(500, e.message)
@@ -101,10 +100,15 @@ const getLabLeaderboardAdmin = async (labId) => {
 exports.createLab = async (lab) => {
     try {
         //TODO it should be atomic
+        console.log('Lab: ' + JSON.stringify(lab))
         const id = await labDao.createLab(lab);
+        console.log('Cloning ideal solution...')
+        await shellService.cloneIdealSolution(lab.linkToIdealSolution, 'test/ideal_solution')
+        console.log('Successfully cloned ideal solution')
         await labDao.insertLabIdealSolution(id, lab.linkToIdealSolution);
         await achievementDao.clearAchievementFake();
     } catch (e) {
+        console.log('Error creating lab: ' + e)
         throw new Exception(500, e.message)
     }
 }
@@ -126,6 +130,8 @@ exports.updateLab = async (lab) => {
         //TODO it should be atomic
         await labDao.updateLab(lab);
         await labDao.updateLabLinkToIdealSolution(lab);
+        fileService.clearDirectory('test/ideal_solution')
+        await shellService.cloneIdealSolution(lab.linkToIdealSolution, 'test/ideal_solution')
         let ret = await labDao.getLabByIdAdmin(lab.id);
         const leaderboard = await getLabLeaderboardAdmin(lab.id)
         ret['leaderboard'] = leaderboard;
@@ -140,6 +146,7 @@ exports.deleteLab = async (labId) => {
         //TODO it should be atomic
         await labDao.deleteLabIdealSolution(labId);
         await labDao.deleteLab(labId);
+        fileService.clearDirectory('test/ideal_solution')
     } catch (e) {
         throw new Exception(500, e.message)
     }
@@ -216,6 +223,13 @@ exports.stopLabIfExpired = () => {
 /* --------------------------------------------------------------- */
 
 exports.getSolutionRepositoryLink = async (labId) => {
+    if (labId === undefined) {
+        try {
+            labId = await labDao.getActiveLabId()
+        } catch (e) {
+            throw new Exception(500, e.message)
+        }
+    }
     try {
         return await labDao.getSolutionRepositoryLink(labId);
     } catch (e) {
@@ -223,7 +237,7 @@ exports.getSolutionRepositoryLink = async (labId) => {
     }
 }
 
-exports.checkProgress = async (studentId, studentRepoLink, solutionRepoLink) => {
+exports.checkProgress = async (studentId) => {
     var result = {
         compiles: true,
         testsReport: {},
@@ -237,28 +251,43 @@ exports.checkProgress = async (studentId, studentRepoLink, solutionRepoLink) => 
 
     const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
 
-    // TODO: move ideal solution to test/ideal_solution
-    // TODO: before cloning ideal solution, check if there are updates to be fetched
-
     try {
+        var studentRepoLink = await userDao.getActiveLabStudentLink(studentId)
+        var solutionRepoLink = await labDao.getActiveLabSolutionLink()
         studentRepoLink = studentRepoLink + '.git'
         solutionRepoLink = solutionRepoLink + '.git'
+
+        console.log(`Cloning student\'s solution in test/packages/check/${studentId}...`)
         await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
-        console.log('Checking if student\'s solution compiles...')
+        console.log('Successfully cloned student\'s solution')
+        console.log('Checking if it compiles...')
         result.compiles = await this.checkCompile(studentId)
-        if(!result.compiles) {
+        if (!result.compiles) {
             console.log('Student\'s solution does not compile')
             cleanup(studentId)
             return result
         }
         console.log('Student\'s solution compiles')
-        await shellService.cloneRepoInDirectory(solutionRepoLink, '/check/ideal')
-        fileService.copyDirectoryFiles('test/packages/check/ideal/src/test/java/it/polito/po/test', `test/packages/check/${studentId}/src/test/java/it/polito/po/test`)
+        if (fs.readdirSync('test/ideal_solution').length === 0 || updateNeeded()) {
+            console.log('Update to ideal solution detected, pulling...')
+            try {
+                e.execSync('cd test/ideal_solution && git fetch && git pull')
+                e.execSync('cd ../..')
+            } catch (err) {
+                console.log('Error while pulling ideal solution: ' + err)
+                e.execSync('cd ../..')
+                return
+            }
+        } else {
+            console.log('Ideal solution is up to date')
+        }
+
+        fileService.copyDirectoryFiles('test/ideal_solution/src/test/java/it/polito/po/test', `test/packages/check/${studentId}/src/test/java/it/polito/po/test`)
         console.log('Running ideal tests...')
         try {
             e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X clean test -Dtest="AllTests"`);
             console.log('Ideal tests passed')
-        } catch(e) {
+        } catch (e) {
             console.log('Ideal tests failed')
         }
         rawReports.testsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
@@ -266,7 +295,7 @@ exports.checkProgress = async (studentId, studentRepoLink, solutionRepoLink) => 
         try {
             e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X clean test -Dtest="TestClass"`);
             console.log('Student\'s tests passed')
-        } catch(e) {
+        } catch (e) {
             console.log('Student\'s tests failed')
         }
         rawReports.coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
@@ -274,7 +303,7 @@ exports.checkProgress = async (studentId, studentRepoLink, solutionRepoLink) => 
         result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
         cleanup(studentId)
         return result
-    } catch(e) {
+    } catch (e) {
         console.log('ERROR: ' + e)
         cleanup(studentId)
     }
@@ -390,7 +419,16 @@ exports.analyzeCoverageReport = (rep) => {
 function cleanup(studentId) {
     fileService.clearDirectory(`test/packages/check/${studentId}`)
     fileService.deleteDirectory(`test/packages/check/${studentId}`)
-    fileService.clearDirectory(`test/packages/check/ideal`)
-    fileService.deleteDirectory(`test/packages/check/ideal`)
     fileService.deleteDirectory(`test/packages/check`)
+}
+
+function updateNeeded() {
+    try {
+        const output = e.execSync('cd test/ideal_solution && git fetch && git diff --quiet HEAD origin/HEAD')
+        e.execSync('cd ../..')
+        return output.toString().trim() !== '';
+    } catch (err) {
+        console.log('Error while checking git diff: ' + err)
+        e.execSync('cd ../..')
+    }
 }
