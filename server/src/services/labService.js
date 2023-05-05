@@ -260,7 +260,6 @@ exports.checkProgress = async (studentId) => {
         console.log(`Cloning student\'s solution in test/packages/check/${studentId}...`)
         await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
         console.log('Successfully cloned student\'s solution')
-        /*
         console.log('Checking if it compiles...')
         result.compiles = await this.checkCompile(studentId)
         if (!result.compiles) {
@@ -268,7 +267,6 @@ exports.checkProgress = async (studentId) => {
             cleanup(studentId)
             return result
         }
-        */
         console.log('Student\'s solution compiles')
         updateIdeal()
 
@@ -416,25 +414,20 @@ function updateIdeal() {
   const startDir = process.cwd();
 
   try {
-    // Move to the test/ideal_solution folder
     process.chdir('test/ideal_solution');
 
-    // Run git fetch and git diff commands
     const gitFetchOutput = e.execSync('git fetch', { encoding: 'utf-8' });
     const gitDiffOutput = e.execSync('git diff HEAD origin/HEAD', { encoding: 'utf-8' });
 
-    // Check if there are differences with the remote repository
     if (gitDiffOutput) {
-      // Update the local repository
       e.execSync('git pull', { encoding: 'utf-8' });
       console.log('Ideal solution updated.');
     } else {
       console.log('Ideal solution is up-to-date.');
     }
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Error checking ideal for updates: ${error.message}`);
   } finally {
-    // Move back to the original folder
     process.chdir(startDir);
   }
 }
