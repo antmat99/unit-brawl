@@ -173,6 +173,7 @@ function LabProgress(props) {
             <Spinner animation="border" role="status">
             </Spinner>
             <h4>Please wait while we check your progress...</h4>
+            <h5>This may take a few minutes, do not refresh the page</h5>
         </>
     }
 }

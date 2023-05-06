@@ -7,6 +7,7 @@ import API from "../../API";
 //TODO: fix all forms
 
 function Labs() {
+    const [loading, setLoading] = useState(false)
     const [labs, setLabs] = useState([])
     const [labsAttendedIds, setLabsAttendedIds] = useState([])
     const [selectedLab, setSelectedLab] = useState(undefined)
@@ -18,8 +19,9 @@ function Labs() {
     const [repositoryLink, setRepositoryLink] = useState([])
 
 
-    useEffect(() => {
+/*     useEffect(() => {
         if (dirty) {
+            setLoading(true)
             API.getLabs()
                 .then(list => {
                     setLabs(list);
@@ -32,7 +34,29 @@ function Labs() {
                 })
                 .catch(err => handleError(err))
             setDirty(false)
+            setLoading(false)
         }
+    }, [dirty]) */
+
+    useEffect(() => {
+        const update = async () => {
+            if (dirty) {
+                setLoading(true)
+                try {
+                    const allLabs = await API.getLabs()
+                    setLabs(allLabs)
+                    setSelectedLab(allLabs[allLabs.length - 1])
+                    const userLabs = await API.getUserLabsAttended()
+                    setLabsAttendedIds(userLabs)
+                } catch(e) {
+                    console.log(e)
+                } finally {
+                    setDirty(false)
+                    setLoading(false)
+                }
+            }
+        }
+        update()
     }, [dirty])
 
     useEffect(() => {
@@ -81,28 +105,30 @@ function Labs() {
         setShowModalEditRepository(false);
     }
 
-    return (
-        <Container fluid>
-            <Row>
-                <Col lg={2}>
-                    <LabList labs={labs} selectLab={selectLab} />
-                </Col>
-                <Col lg={9}>
-                    <LabMain lab={selectedLab} labsAttendedIds={labsAttendedIds} joinLab={openModalJoinLab} userLabRegionLeaderboard={userLabRegionLeaderboard} editRepository={openModalEditRepository} />
-                </Col>
-            </Row>
-            <ModalJoinLab lab={selectedLab} show={showModalJoinLab} close={closeModalJoinLab} />
-            <ModalEditRepository lab={selectedLab} show={showModalEditRepository} close={closeModalEditRepository} actualLink={repositoryLink} />
-        </Container>
-    )
+    return <>
+        {
+            loading ? <></> :
+                <Container fluid>
+                    <Row>
+                        <Col lg={2}>
+                            <LabList labs={labs} selectLab={selectLab} />
+                        </Col>
+                        <Col lg={9}>
+                            <LabMain lab={selectedLab} labsAttendedIds={labsAttendedIds} joinLab={openModalJoinLab} userLabRegionLeaderboard={userLabRegionLeaderboard} editRepository={openModalEditRepository} />
+                        </Col>
+                    </Row>
+                    <ModalJoinLab lab={selectedLab} show={showModalJoinLab} close={closeModalJoinLab} setDirty={setDirty} />
+                    <ModalEditRepository lab={selectedLab} show={showModalEditRepository} close={closeModalEditRepository} actualLink={repositoryLink} />
+                </Container>
+        }
+    </>
 }
 
 
 function ModalJoinLab(props) {
-    const { lab, show, close } = props;
+    const { lab, show, close, setDirty } = props;
 
     const [link, setLink] = useState('');
-    const [isValidLink, setIsValidLink] = useState(false);
     const [backendError, setBackendError] = useState(false);
     const [backendErrorMessage, setBackendErrorMessage] = useState('');
 
@@ -110,33 +136,32 @@ function ModalJoinLab(props) {
         setLink('');
         setBackendError(false);
         setBackendErrorMessage('');
+        setDirty(true)
         close();
+    }
+
+    const handleLinkChange = (event) => {
+        setLink(event.target.value);
     }
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        if (isValidLink) {
+        if (!link) {
+            alert('Please provide a link')
+        }
+        else {
             setBackendError(false);
             setBackendErrorMessage('');
             try {
-                await API.joinLab(link);
-            } catch (errorMessage) {
+                API.joinLab(link)
+            } catch (e) {
+                console.log('Error joining lab: ' + e)
                 setBackendError(true);
-                setBackendErrorMessage(errorMessage);
-                event.preventDefault();
+                setBackendErrorMessage(e);
                 event.stopPropagation();
             }
+            handleClose()
         }
-        else { //invalid text in form
-            event.preventDefault();
-            event.stopPropagation();
-        }
-    };
-
-    const onChangeLink = (formLink) => {
-        setLink(formLink);
-        if (formLink === '') setIsValidLink(false);
-        else setIsValidLink(true);
     }
 
     return (
@@ -146,7 +171,7 @@ function ModalJoinLab(props) {
             animation={true}
         >
             <Modal.Header>
-                Do you want to join {(lab != undefined) ? lab.name : ''}?
+                Insert link to your repository for lab {(lab != undefined) ? lab.name : ''}
             </Modal.Header>
             <Modal.Body>
                 {
@@ -161,20 +186,18 @@ function ModalJoinLab(props) {
                     <Row className="mb-3">
 
                         <Form.Group md='4' controlId="validationRepository">
-                            <Form.Label>Insert link to your lab's repository</Form.Label>
+                            <Form.Label>Link</Form.Label>
                             <Form.Control
                                 type="text"
-                                placeholder="Link"
-                                onChange={e => onChangeLink(e.target.value)}
-                                isInvalid={!isValidLink}
+                                placeholder='Enter link to lab repository'
+                                value={link}
+                                onChange={handleLinkChange}
+                                required
                             />
-                            <Form.Control.Feedback type="invalid">
-                                Please provide a link to your repository.
-                            </Form.Control.Feedback>
                         </Form.Group>
                     </Row>
                     <Button type='submit'>Join</Button>
-                    <Button variant='secondary' onClick={() => handleClose()}>Cancel</Button>
+                    <Button variant='secondary' onClick={handleClose}>Cancel</Button>
                 </Form>
             </Modal.Body>
         </Modal>

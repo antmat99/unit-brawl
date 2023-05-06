@@ -3,8 +3,6 @@ import { ProgressBar, Container, Row, Col, Nav, Button } from 'react-bootstrap';
 import Leaderboard from "../../components/common/Leaderboard"
 import LabProgress from './LabsComponents/LabProgress'
 import Countdown from 'react-countdown';
-import API from '../../API'
-
 
 const dayjs = require('dayjs');
 const customParseFormat = require('dayjs/plugin/customParseFormat')
@@ -171,7 +169,6 @@ function LabMain(props) {
                                 setDirty(true);
                             }}
                         >
-                            {/*TODO: show requirements in trace section*/}
                             <Nav.Item>
                                 <Nav.Link eventKey={MainComponents.Trace}>Trace</Nav.Link>
                             </Nav.Item>
@@ -179,7 +176,7 @@ function LabMain(props) {
                                 (!lab.expired && (labsAttendedIds.includes(lab.id))) &&
                                 <>
                                     <Nav.Item>
-                                        <Nav.Link eventKey={MainComponents.Progress}>Progress</Nav.Link>
+                                        <Nav.Link eventKey={MainComponents.Progress}>Your progress</Nav.Link>
                                     </Nav.Item>
                                 </>
                             }
