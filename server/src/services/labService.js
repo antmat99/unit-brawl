@@ -244,6 +244,7 @@ exports.checkProgress = async (studentId) => {
         coverageReport: {},
         studentTestNumber: undefined,
         maxTestNumber: undefined,
+        studentTestsPass: true
     }
 
     var rawReports = {
@@ -273,7 +274,8 @@ exports.checkProgress = async (studentId) => {
         }
         console.log('Student\'s solution compiles')
         updateIdeal()
-
+        //await shellService.cloneIdealSolution(solutionRepoLink, 'test/ideal_solution')
+        
         fileService.copyDirectoryFiles('test/ideal_solution/src/test/java/it/polito/po/test', `test/packages/check/${studentId}/src/test/java/it/polito/po/test`)
         console.log('Running ideal tests...')
         try {
@@ -289,13 +291,18 @@ exports.checkProgress = async (studentId) => {
             console.log('Student\'s tests passed')
         } catch (e) {
             console.log('Student\'s tests failed')
+            result.studentTestsPass = false
+
         }
         result.studentTestNumber = getTestNumber(studentId)
-        rawReports.coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
+        if (result.studentTestsPass) {
+            console.log('Student\'s tests fail, did not generate coverage report')
+            rawReports.coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
+            result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
+        }
         result.testsReport = this.analyzeTestReport(rawReports.testsReport)
-        result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
         result.testNumberExceeded = (result.studentTestNumber > result.maxTestNumber)
-        if(result.testNumberExceeded){
+        if (result.testNumberExceeded) {
             console.log('Student\'s solution has ' + result.studentTestNumber + ' tests, which exceeds the maximum number: ' + result.maxTestNumber)
         }
         cleanup(studentId)
@@ -434,23 +441,23 @@ function cleanup(studentId) {
 }
 
 function updateIdeal() {
-  const startDir = process.cwd();
+    const startDir = process.cwd();
 
-  try {
-    process.chdir('test/ideal_solution');
+    try {
+        process.chdir('test/ideal_solution');
 
-    const gitFetchOutput = e.execSync('git fetch', { encoding: 'utf-8' });
-    const gitDiffOutput = e.execSync('git diff HEAD origin/HEAD', { encoding: 'utf-8' });
-
-    if (gitDiffOutput) {
-      e.execSync('git pull', { encoding: 'utf-8' });
-      console.log('Ideal solution updated.');
-    } else {
-      console.log('Ideal solution is up-to-date.');
+        const gitFetchOutput = e.execSync('git fetch', { encoding: 'utf-8' });
+        const gitDiffOutput = e.execSync('git diff HEAD origin/HEAD', { encoding: 'utf-8' });
+    
+        if (gitDiffOutput) {
+            e.execSync('git pull', { encoding: 'utf-8' });
+            console.log('Ideal solution updated.');
+        } else {
+            console.log('Ideal solution is up-to-date.');
+        }
+    } catch (error) {
+        console.error(`Error checking ideal for updates: ${error.message}`);
+    } finally {
+        process.chdir(startDir);
     }
-  } catch (error) {
-    console.error(`Error checking ideal for updates: ${error.message}`);
-  } finally {
-    process.chdir(startDir);
-  }
 }

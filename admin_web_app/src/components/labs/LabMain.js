@@ -136,9 +136,7 @@ function LabMain(props) {
 
 function MainComponentTrace(props) {
     return (
-        <p style={{ marginTop: '1rem' }}>
-            {props.trace}
-        </p>
+        <div dangerouslySetInnerHTML={{ __html: props.trace }} />
     )
 }
 

@@ -5,8 +5,6 @@ import 'react-circular-progressbar/dist/styles.css';
 
 import API from '../../../API'
 
-//TODO: progress tab should stay updated when switching to different tab
-
 function LabProgress(props) {
 
     const [loading, setLoading] = useState(false)
@@ -15,6 +13,7 @@ function LabProgress(props) {
     const [studentTestNumber, setStudentTestNumber] = useState(false)
     const [maxTestNumber, setMaxTestNumber] = useState(false)
     const [testNumberExceeded, setTestNumberExceeded] = useState(false)
+    const [studentTestsPass, setStudentTestsPass] = useState()
     const [requirements, setRequirements] = useState()
     const [instructionsCovered, setInstructionsCovered] = useState()
     const [instructionsMissed, setInstructionsMissed] = useState()
@@ -30,6 +29,7 @@ function LabProgress(props) {
         setStudentTestNumber(props.labProgressState.studentTestNumber)
         setMaxTestNumber(props.labProgressState.maxTestNumber)
         setTestNumberExceeded(props.labProgressState.testNumberExceeded)
+        setStudentTestsPass(props.labProgressState.studentTestsPass)
         setRequirements(props.labProgressState.requirements)
         setInstructionsCovered(props.labProgressState.instructionsCovered)
         setInstructionsMissed(props.labProgressState.instructionsMissed)
@@ -47,6 +47,7 @@ function LabProgress(props) {
         setStudentTestNumber(reports.studentTestNumber)
         setMaxTestNumber(reports.maxTestNumber)
         setTestNumberExceeded(reports.testNumberExceeded)
+        setStudentTestsPass(reports.studentTestsPass)
         const testsReport = reports.testsReport
         /* If needed, reports.testsReport contains
             - totalTests
@@ -90,6 +91,7 @@ function LabProgress(props) {
             studentTestNumber: reports.studentTestNumber,
             maxTestNumber: reports.maxTestNumber,
             testNumberExceeded: reports.testNumberExceeded,
+            studentTestsPass: reports.studentTestsPass,
             requirements: requirements,
             instructionsCovered: instructionsCovered,
             instructionsMissed: instructionsMissed,
@@ -128,14 +130,18 @@ function LabProgress(props) {
                     </Col>
                     <Col>
                         <h3 style={{ marginBottom: '20px' }}>Coverage report summary</h3>
-                        <CoverageDashboard
-                            instrCovered={instructionsCovered}
-                            instrMissed={instructionsMissed}
-                            methodsCovered={methodsCovered}
-                            methodsMissed={methodsMissed}
-                            classesCovered={classesCovered}
-                            classesMissed={classesMissed}
-                        />
+                        {
+                            studentTestsPass ?
+                                <CoverageDashboard
+                                    instrCovered={instructionsCovered}
+                                    instrMissed={instructionsMissed}
+                                    methodsCovered={methodsCovered}
+                                    methodsMissed={methodsMissed}
+                                    classesCovered={classesCovered}
+                                    classesMissed={classesMissed}
+                                /> :
+                                <h5>Some of your tests fail, could not generate coverage report...</h5>
+                        }
                     </Col>
                 </Row>
                 <Row>

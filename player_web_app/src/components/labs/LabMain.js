@@ -30,6 +30,7 @@ function LabMain(props) {
         studentTestNumber: 0,
         maxTestNumber: 0,
         testNumberExceeded: false,
+        studentTestsPass: true,
         requirements: [],
         instructionsCovered: 0,
         instructionsMissed: 0,
@@ -47,6 +48,7 @@ function LabMain(props) {
             studentTestNumber: 0,
             maxTestNumber: 0,
             testNumberExceeded: false,
+            studentTestsPass: true,
             requirements: [],
             instructionsCovered: 0,
             instructionsMissed: 0,
@@ -65,6 +67,7 @@ function LabMain(props) {
             studentTestNumber: data.studentTestNumber,
             maxTestNumber: data.maxTestNumber,
             testNumberExceeded: data.testNumberExceeded,
+            studentTestsPass: data.studentTestsPass,
             requirements: data.requirements,
             instructionsCovered: data.instructionsCovered,
             instructionsMissed: data.instructionsMissed,
@@ -236,9 +239,7 @@ function LabMain(props) {
 
 function MainComponentTrace(props) {
     return (
-        <h5>
-            {props.trace}
-        </h5>
+        <div dangerouslySetInnerHTML={{ __html: props.trace }} />
     )
 }
 
