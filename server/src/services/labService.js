@@ -241,7 +241,8 @@ exports.checkProgress = async (studentId) => {
     var result = {
         compiles: true,
         testsReport: {},
-        coverageReport: {}
+        coverageReport: {},
+        testNumberExceeded: false
     }
 
     var rawReports = {
@@ -256,6 +257,8 @@ exports.checkProgress = async (studentId) => {
         var solutionRepoLink = await labDao.getActiveLabSolutionLink()
         studentRepoLink = studentRepoLink + '.git'
         solutionRepoLink = solutionRepoLink + '.git'
+
+        const maxTestNumber = await labDao.getActiveLabMaxTestNumber()
 
         console.log(`Cloning student\'s solution in test/packages/check/${studentId}...`)
         await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
@@ -289,6 +292,10 @@ exports.checkProgress = async (studentId) => {
         rawReports.coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
         result.testsReport = this.analyzeTestReport(rawReports.testsReport)
         result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
+        result.testNumberExceeded = (result.testsReport.totalTests > maxTestNumber)
+        if(result.testNumberExceeded){
+            console.log('Student\'s solution exceeds maximum test number')
+        }
         cleanup(studentId)
         return result
     } catch (e) {

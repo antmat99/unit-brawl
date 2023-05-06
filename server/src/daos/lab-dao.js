@@ -389,3 +389,17 @@ exports.getActiveLabSolutionLink = () => {
         })
     })
 }
+
+exports.getActiveLabMaxTestNumber = () => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT test_max_number FROM lab WHERE active = 1'
+        db.get(sql, (err, row) => {
+            if(err){
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            } else {
+                resolve(row.test_max_number)
+            }
+        })
+    })
+}
