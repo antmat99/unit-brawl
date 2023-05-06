@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, Col, ProgressBar, Row, Spinner, Table, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Button, Col, ProgressBar, Row, Spinner, Table, OverlayTrigger, Tooltip, Alert } from 'react-bootstrap';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css';
 
@@ -12,6 +12,9 @@ function LabProgress(props) {
     const [loading, setLoading] = useState(false)
     const [checkDone, setCheckDone] = useState(false)
     const [compiles, setCompiles] = useState(false)
+    const [studentTestNumber, setStudentTestNumber] = useState(false)
+    const [maxTestNumber, setMaxTestNumber] = useState(false)
+    const [testNumberExceeded, setTestNumberExceeded] = useState(false)
     const [requirements, setRequirements] = useState()
     const [instructionsCovered, setInstructionsCovered] = useState()
     const [instructionsMissed, setInstructionsMissed] = useState()
@@ -24,6 +27,9 @@ function LabProgress(props) {
         setLoading(props.labProgressState.loading)
         setCheckDone(props.labProgressState.checkDone)
         setCompiles(props.labProgressState.compiles)
+        setStudentTestNumber(props.labProgressState.studentTestNumber)
+        setMaxTestNumber(props.labProgressState.maxTestNumber)
+        setTestNumberExceeded(props.labProgressState.testNumberExceeded)
         setRequirements(props.labProgressState.requirements)
         setInstructionsCovered(props.labProgressState.instructionsCovered)
         setInstructionsMissed(props.labProgressState.instructionsMissed)
@@ -38,6 +44,9 @@ function LabProgress(props) {
         props.handleCheckStarted()
         const reports = await API.checkProgress(props.studentRepoLink, props.solutionRepoLink)
         setCompiles(reports.compiles)
+        setStudentTestNumber(reports.studentTestNumber)
+        setMaxTestNumber(reports.maxTestNumber)
+        setTestNumberExceeded(reports.testNumberExceeded)
         const testsReport = reports.testsReport
         /* If needed, reports.testsReport contains
             - totalTests
@@ -78,6 +87,9 @@ function LabProgress(props) {
 
         const reportContent = {
             compiles: reports.compiles,
+            studentTestNumber: reports.studentTestNumber,
+            maxTestNumber: reports.maxTestNumber,
+            testNumberExceeded: reports.testNumberExceeded,
             requirements: requirements,
             instructionsCovered: instructionsCovered,
             instructionsMissed: instructionsMissed,
@@ -101,6 +113,11 @@ function LabProgress(props) {
     if (checkDone && !loading) {
         if (compiles) {
             return <>
+                {testNumberExceeded && <>
+                    <Alert variant='danger'>
+                        Tests found in your solution: {studentTestNumber} - Maximum number of tests allowed: {maxTestNumber}
+                    </Alert>
+                </>}
                 <Row>
                     <Col>
                         <h3 style={{ marginBottom: '20px' }}>Tests report summary</h3>

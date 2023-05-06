@@ -242,7 +242,8 @@ exports.checkProgress = async (studentId) => {
         compiles: true,
         testsReport: {},
         coverageReport: {},
-        testNumberExceeded: false
+        studentTestNumber: undefined,
+        maxTestNumber: undefined,
     }
 
     var rawReports = {
@@ -258,7 +259,7 @@ exports.checkProgress = async (studentId) => {
         studentRepoLink = studentRepoLink + '.git'
         solutionRepoLink = solutionRepoLink + '.git'
 
-        const maxTestNumber = await labDao.getActiveLabMaxTestNumber()
+        result.maxTestNumber = await labDao.getActiveLabMaxTestNumber()
 
         console.log(`Cloning student\'s solution in test/packages/check/${studentId}...`)
         await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
@@ -289,12 +290,13 @@ exports.checkProgress = async (studentId) => {
         } catch (e) {
             console.log('Student\'s tests failed')
         }
+        result.studentTestNumber = getTestNumber(studentId)
         rawReports.coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
         result.testsReport = this.analyzeTestReport(rawReports.testsReport)
         result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
-        result.testNumberExceeded = (result.testsReport.totalTests > maxTestNumber)
+        result.testNumberExceeded = (result.studentTestNumber > result.maxTestNumber)
         if(result.testNumberExceeded){
-            console.log('Student\'s solution exceeds maximum test number')
+            console.log('Student\'s solution has ' + result.studentTestNumber + ' tests, which exceeds the maximum number: ' + result.maxTestNumber)
         }
         cleanup(studentId)
         return result
@@ -408,6 +410,20 @@ exports.analyzeCoverageReport = (rep) => {
     }
 
     return result
+}
+
+function getTestNumber(studentId) {
+    const reportOutput = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.TestClass.xml`)
+    const options = {
+        ignoreAttributes: false,
+        attributeNamePrefix: "",
+        parseNodeValue: true
+    };
+    const parser = new xml.XMLParser(options);
+    const report = parser.parse(reportOutput)
+
+    const testsuite = report['testsuite']
+    return testsuite.tests
 }
 
 /* Utility */
