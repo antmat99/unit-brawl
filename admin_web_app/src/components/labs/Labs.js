@@ -12,6 +12,7 @@ dayjs.extend(customParseFormat);
 
 
 function Labs() {
+    const [loading, setLoading] = useState(false)
     const [labs, setLabs] = useState([]);
     const [selectedLab, setSelectedLab] = useState(undefined);
     const [activeLab, setActiveLab] = useState(undefined);
@@ -22,23 +23,44 @@ function Labs() {
     const [numberOfPlayers, setNumberOfPayers] = useState(0);
     const [dirty, setDirty] = useState(true);
 
+    /*     useEffect(() => {
+            const f = async () => {
+                if (dirty) {
+                    await API.getLabs()
+                        .then(list => {
+                            setLabs(list);
+                            setSelectedLab(list[list.length - 1]);
+                        })
+                        .catch(err => handleError(err));
+                    await API.getActiveLab()
+                        .then(res => {
+                            setActiveLab(res);
+                        }).catch(err => handleError(err));
+                    setDirty(false);
+                }
+            }
+            f();
+        }, [dirty]) */
+
     useEffect(() => {
-        const f = async () => {
+        const update = async () => {
             if (dirty) {
-                await API.getLabs()
-                    .then(list => {
-                        setLabs(list);
-                        setSelectedLab(list[list.length - 1]);
-                    })
-                    .catch(err => handleError(err));
-                await API.getActiveLab()
-                    .then(res => {
-                        setActiveLab(res);
-                    }).catch(err => handleError(err));
-                setDirty(false);
+                setLoading(true)
+                try {
+                    const labs = await API.getLabs()
+                    setLabs(labs)
+                    setSelectedLab(labs[labs.length - 1])
+                    const active = await API.getActiveLab()
+                    setActiveLab(active)
+                } catch (e) {
+                    console.log(e)
+                } finally {
+                    setDirty(false)
+                    setLoading(false)
+                }
             }
         }
-        f();
+        update()
     }, [dirty])
 
     useEffect(() => {
@@ -91,47 +113,51 @@ function Labs() {
         setDirty(true)
     }
 
-    return (
-        <Container fluid>
-            {
-                activeLab ?
-                    ''
-                    :
-                    <Alert variant='warning'>
-                        There aren't any active labs. Click on the "+" button to create one.
-                    </Alert>
-            }
-            <Row>
-                <Col lg={2}>
-                    <LabList labs={labs} selectLab={selectLab} />
-                </Col>
-                <Col lg={9}>
-                    <LabMain lab={selectedLab} editLab={openEditLabModal} deleteLab={openDeleteLabModal} stopLab={openModalStopLab} numberOfPlayers={numberOfPlayers} />
-                </Col>
-            </Row>
-            {
-                activeLab ?
-                    ''
-                    :
-                    <FABContainer>
-                        <FloatingActionButton onClick={() => setShowModalStartLab(true)} >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" className="bi bi-plus-lg" viewBox="0 0 16 16">
-                                <path fillRule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z" />
-                            </svg>
-                        </FloatingActionButton>
-                    </FABContainer>
-            }
+    return <>
+        {
+            loading ? <></> :
+                <Container fluid>
+                    {
+                        activeLab ?
+                            ''
+                            :
+                            <Alert variant='warning'>
+                                There aren't any active labs. Click on the "+" button to create one.
+                            </Alert>
+                    }
+                    <Row>
+                        <Col lg={2}>
+                            <LabList labs={labs} selectLab={selectLab} />
+                        </Col>
+                        <Col lg={9}>
+                            <LabMain lab={selectedLab} editLab={openEditLabModal} deleteLab={openDeleteLabModal} stopLab={openModalStopLab} numberOfPlayers={numberOfPlayers} />
+                        </Col>
+                    </Row>
+                    {
+                        activeLab ?
+                            ''
+                            :
+                            <FABContainer>
+                                <FloatingActionButton onClick={() => setShowModalStartLab(true)} >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" className="bi bi-plus-lg" viewBox="0 0 16 16">
+                                        <path fillRule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z" />
+                                    </svg>
+                                </FloatingActionButton>
+                            </FABContainer>
+                    }
 
-            <ModalStartEditLab show={showModalStartEditLab} closeModal={closeModalStartEditLab} edit={editLab} labToEdit={selectedLab} />
-            <ModalDeleteLab show={showModalDeleteLab} closeModal={closeModalDeleteLab} lab={selectedLab} />
-            <ModalStopLab show={showModalStopLab} closeModal={closeModalStopLab} lab={selectedLab} />
-        </Container>
-    )
+                    <ModalStartEditLab show={showModalStartEditLab} closeModal={closeModalStartEditLab} edit={editLab} labToEdit={selectedLab} setDirty={setDirty}/>
+                    <ModalDeleteLab show={showModalDeleteLab} closeModal={closeModalDeleteLab} lab={selectedLab} />
+                    <ModalStopLab show={showModalStopLab} closeModal={closeModalStopLab} lab={selectedLab} />
+                </Container>
+        }
+
+    </>
 
 }
 
 function ModalStartEditLab(props) {
-    const { show, closeModal, edit, labToEdit } = props;
+    const { show, closeModal, edit, labToEdit, setDirty } = props;
     const [isValidName, setIsValidName] = useState(false);
     const [isValidTrace, setIsValidTrace] = useState(false);
     const [isValidDate, setIsValidDate] = useState(false);
@@ -151,6 +177,7 @@ function ModalStartEditLab(props) {
         setDate('');
         setTestMaxNumber('');
         setLinkToIdealSolution('');
+        setDirty(true)
         closeModal();
     }
 
@@ -167,15 +194,18 @@ function ModalStartEditLab(props) {
                     //set fake id as 0, backend will overwrite it
                     await API.createAndStartLab(new Lab(0, name, date, trace, false, null, testMaxNumber, linkToIdealSolution))
                 }
+                handleClose()
             } catch (errorMessage) {
                 setBackendError(true);
                 setBackendErrorMessage(errorMessage);
-                event.preventDefault();
-                event.stopPropagation();
             }
         }
         else { //invalid text in form
-            event.preventDefault();
+            console.log('Invalid data in form')
+            console.log('Name valid: ' + isValidName)
+            console.log('Trace valid: ' + isValidTrace)
+            console.log('Max test number valid: ' + isValidTestMaxNumber)
+            console.log('Link to solution valid: ' + isValidLinkToIdealSolution)
             event.stopPropagation();
         }
     };
@@ -321,11 +351,11 @@ function ModalStartEditLab(props) {
                     </Row>
                     {
                         edit ?
-                            <Button type="submit" style={{marginTop:'1rem',marginRight:'1rem'}}>Save</Button>
+                            <Button type="submit" style={{ marginTop: '1rem', marginRight: '1rem' }}>Save</Button>
                             :
                             <Button type="submit">Create lab</Button>
                     }
-                    <Button variant='secondary' onClick={() => handleClose(false)} style={{marginTop:'1rem',marginRight:'1rem'}}>
+                    <Button variant='secondary' onClick={() => handleClose(false)} style={{ marginTop: '1rem', marginRight: '1rem' }}>
                         Cancel
                     </Button>
                 </Form>
