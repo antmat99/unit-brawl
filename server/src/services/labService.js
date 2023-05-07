@@ -102,6 +102,8 @@ exports.createLab = async (lab) => {
         //TODO it should be atomic
         console.log('Lab: ' + JSON.stringify(lab))
         const id = await labDao.createLab(lab);
+        console.log('Cleaning ideal solution directory...')
+        fileService.clearDirectory('test/ideal_solution')
         console.log('Cloning ideal solution...')
         await shellService.cloneIdealSolution(lab.linkToIdealSolution, 'test/ideal_solution')
         console.log('Successfully cloned ideal solution')
@@ -293,8 +295,8 @@ exports.checkProgress = async (studentId) => {
             console.log('Student\'s tests failed')
             result.studentTestsPass = false
         }
-        result.studentTestNumber = getTestNumber(studentId)
         if (result.studentTestsPass) {
+            result.studentTestNumber = getTestNumber(studentId)
             rawReports.coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
             result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
         } else {
@@ -362,11 +364,14 @@ exports.analyzeTestReport = (rep) => {
     const testcasesObj = testcases.map(tc => {
         const tcObj = {}
         Object.keys(tc).forEach(key => {
-            if (key !== 'failure') {
+            if (key !== 'failure' && key !== 'error') {
                 tcObj[key] = tc[key]
-            } else {
+            } else if(key === 'failure') {
                 tcObj['failureMessage'] = tc[key]['message']
                 tcObj['failureType'] = tc[key]['type']
+            } else {
+                tcObj['errorMessage'] = tc[key]['message']
+                tcObj['errorType'] = tc[key]['type']
             }
         })
 

@@ -73,6 +73,13 @@ function LabProgress(props) {
                     if (cur.failureMessage) {
                         tcObj.failureMessage = cur.failureMessage;
                     }
+                    if(cur.errorType) {
+                        failed = true
+                        tcObj.errorType = cur.errorType
+                    }
+                    if(cur.errorMessage) {
+                        tcObj.errorMessage = cur.errorMessage
+                    }
                     acc.push(tcObj);
                     return acc;
                 }, []),
@@ -225,7 +232,7 @@ function ReqReportRow(props) {
 }
 
 function ReqCommentElement(props) {
-    const failingTests = props.tests.filter(t => t.failureType !== undefined)
+    const failingTests = props.tests.filter(t => (t.failureType !== undefined || t.errorType !== undefined))
     let failingMethods = []
     failingTests.forEach((test) => {
         const methodNameCapitalized = test.testname.replace('test', '')
