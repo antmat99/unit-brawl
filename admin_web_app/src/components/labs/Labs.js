@@ -394,7 +394,7 @@ function ModalDeleteLab(props) {
             animation={true}
             onHide={handleClose}>
             <Modal.Header closeButton>
-                <Modal.Title>Are you sure to delete this lab?</Modal.Title>
+                <Modal.Title>Are you sure you want to delete this lab?</Modal.Title>
             </Modal.Header>
             {
                 backendError ?
@@ -405,8 +405,8 @@ function ModalDeleteLab(props) {
                     ''
             }
             <Modal.Footer>
-                <Button onClick={() => handleDelete()}>Delete</Button>
-                <Button onClick={() => handleClose(false)}>Cancel</Button>
+                <Button variant='danger' onClick={() => handleDelete()}>Delete</Button>
+                <Button variant='outline-secondary' onClick={() => handleClose(false)}>Cancel</Button>
             </Modal.Footer>
         </Modal>
     )
@@ -442,7 +442,7 @@ function ModalStopLab(props) {
             animation={true}
             onHide={handleClose}>
             <Modal.Header closeButton>
-                <Modal.Title>Are you sure to stop this lab?</Modal.Title>
+                <Modal.Title>Are you sure you want to stop this lab?</Modal.Title>
             </Modal.Header>
             {
                 backendError ?
@@ -453,8 +453,8 @@ function ModalStopLab(props) {
                     ''
             }
             <Modal.Footer>
-                <Button onClick={() => handleStop()}>Stop</Button>
-                <Button onClick={() => handleClose(false)}>Cancel</Button>
+                <Button variant='danger' onClick={() => handleStop()}>Stop</Button>
+                <Button variant='outline-secondary' onClick={() => handleClose(false)}>Cancel</Button>
             </Modal.Footer>
         </Modal>
     )

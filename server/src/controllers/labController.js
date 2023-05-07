@@ -156,9 +156,9 @@ exports.checkSolutionCompiles = async (req, res) => {
     }
 }
 
+/* Remove */
 exports.getTestsReport = async (req, res) => {
     try {
-        // TODO: use user's repo link
         const report = await labService.getTestsReport('https://gitlab.com/matteofavretto/mountain-huts.git');
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json(report)

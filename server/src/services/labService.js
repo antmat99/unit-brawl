@@ -292,13 +292,13 @@ exports.checkProgress = async (studentId) => {
         } catch (e) {
             console.log('Student\'s tests failed')
             result.studentTestsPass = false
-
         }
         result.studentTestNumber = getTestNumber(studentId)
         if (result.studentTestsPass) {
-            console.log('Student\'s tests fail, did not generate coverage report')
             rawReports.coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
             result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
+        } else {
+            console.log('Student\'s tests fail, did not generate coverage report')
         }
         result.testsReport = this.analyzeTestReport(rawReports.testsReport)
         result.testNumberExceeded = (result.studentTestNumber > result.maxTestNumber)
