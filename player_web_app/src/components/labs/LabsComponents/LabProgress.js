@@ -73,11 +73,11 @@ function LabProgress(props) {
                     if (cur.failureMessage) {
                         tcObj.failureMessage = cur.failureMessage;
                     }
-                    if(cur.errorType) {
+                    if (cur.errorType) {
                         failed = true
                         tcObj.errorType = cur.errorType
                     }
-                    if(cur.errorMessage) {
+                    if (cur.errorMessage) {
                         tcObj.errorMessage = cur.errorMessage
                     }
                     acc.push(tcObj);
@@ -147,12 +147,16 @@ function LabProgress(props) {
                                     classesCovered={classesCovered}
                                     classesMissed={classesMissed}
                                 /> :
-                                <h5>Some of your tests fail, could not generate coverage report...</h5>
+                                <>
+                                    <h5>Coverage report was not generated</h5>
+                                    <h6>This is normal if you have not provided any test yet. If you have, check if any of them fails, and make sure to place them in <code>src/test/java/it/polito/po/test/TestClass.java</code></h6>
+                                </>
+
                         }
                     </Col>
                 </Row>
                 <Row>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px'}}>
                         <Button onClick={checkProgress}>Update progress</Button>
                     </div>
                 </Row>
@@ -209,7 +213,7 @@ function ReqReportTable(props) {
                 <tr>
                     <th>Requirement</th>
                     <th>Status</th>
-                    <th>Comment</th>
+                    <th>Info</th>
                 </tr>
             </thead>
             <tbody>
@@ -232,6 +236,7 @@ function ReqReportRow(props) {
 }
 
 function ReqCommentElement(props) {
+    const liStyle = { margin: 0, paddingBottom: '3px', listStyle: 'circle' }
     const failingTests = props.tests.filter(t => (t.failureType !== undefined || t.errorType !== undefined))
     let failingMethods = []
     failingTests.forEach((test) => {
@@ -244,10 +249,12 @@ function ReqCommentElement(props) {
     failingMethods = [...new Set(failingMethods)];
 
     return <td>
-        <div>There seem to be a problem with the following required methods: </div>
-        {failingMethods.map((m) => {
-            return <ul>{m}</ul>
-        })}
+        <div>There seems to be a problem with the following required methods: </div>
+        <ul>
+            {failingMethods.map((m) => {
+                return <li style={liStyle}>{m}</li>
+            })}
+        </ul>
     </td>
 }
 
