@@ -31,7 +31,7 @@ exports.cloneRepoInDirectory = async (linkToRepo, directoryName) => {
 
 exports.getTestPath = (project_path) => {
     const projectCorrectPath = path.normalize(project_path);
-    return path.join(projectCorrectPath, path.normalize('src/test/java'));
+    return path.join(projectCorrectPath, path.normalize('src/test/java/it/polito/po/test'));
 }
 
 

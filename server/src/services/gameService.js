@@ -173,7 +173,8 @@ const codeCheck = (solution) => {
     console.log(solution)
     console.log()
     try {
-        shellService.mavenCompile(path.join(solution.rootPackagesUsername, utilPath.projectname))
+        console.log('COMPILING: ' + path.join(solution.rootPackagesUsername))
+        shellService.mavenCompile(path.join(solution.rootPackagesUsername))
         console.log('Solution compiles:')
         console.log(solution)
         console.log()
@@ -195,8 +196,10 @@ const testCheck = async (solution) => {
         //these tests are carried on in ideal_solution folder
 
         //deleting test/java of ideal solution and paste test/java from user's solution
-        const userSolutionTestAbsPath = shellService.getTestPath(path.join(solution.rootPackagesUsername, utilPath.projectname)); //user's test/java
+        const userSolutionTestAbsPath = shellService.getTestPath(path.join(solution.rootPackagesUsername/*, utilPath.projectname*/)); //user's test/java
         const idealSolutionTestAbsPath = shellService.getTestPath(utilPath.rootIdealsolutionProjectname); //ideal solution's test/java
+        console.log('Student solution: ' + userSolutionTestAbsPath)
+        console.log('Ideal solution: ' + idealSolutionTestAbsPath)
         fileService.clearDirectory(idealSolutionTestAbsPath);
         fileService.copyDirectoryFiles(userSolutionTestAbsPath, idealSolutionTestAbsPath);
 

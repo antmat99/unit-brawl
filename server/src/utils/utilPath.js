@@ -31,7 +31,7 @@ exports.rootWarzone = path.normalize('./test'+'/warzone');
 
 exports.projectname = path.normalize('lab');
 
-exports.rootIdealsolutionProjectname = path.normalize('./test'+'/ideal_solution/lab');
+exports.rootIdealsolutionProjectname = path.normalize('./test'+'/ideal_solution');
 
 exports.rootWarzoneProjectname = path.normalize('./test'+'/warzone/lab');
 
