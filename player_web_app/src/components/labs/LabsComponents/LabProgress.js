@@ -156,7 +156,7 @@ function LabProgress(props) {
                     </Col>
                 </Row>
                 <Row>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px'}}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
                         <Button onClick={checkProgress}>Update progress</Button>
                     </div>
                 </Row>
@@ -213,7 +213,7 @@ function ReqReportTable(props) {
                 <tr>
                     <th>Requirement</th>
                     <th>Status</th>
-                    <th>Info</th>
+                    <th>Comment (Click on the failing methods for more info)</th>
                 </tr>
             </thead>
             <tbody>
@@ -244,7 +244,18 @@ function ReqCommentElement(props) {
         var methodName = methodNameCapitalized.charAt(0).toLowerCase() + methodNameCapitalized.slice(1)
         if (/\d$/.test(methodName))
             methodName = methodName.slice(0, -1);
-        failingMethods.push(methodName)
+        const methodObj = {
+            name: methodName,
+        }
+        if (test.failureType !== undefined){
+            methodObj.message = test.failureMessage
+            methodObj.type = test.failureType
+        }
+        else {
+            methodObj.message = test.errorMessage
+            methodObj.type = test.errorType
+        }
+        failingMethods.push(methodObj)
     })
     failingMethods = [...new Set(failingMethods)];
 
@@ -252,7 +263,20 @@ function ReqCommentElement(props) {
         <div>There seems to be a problem with the following required methods: </div>
         <ul>
             {failingMethods.map((m) => {
-                return <li style={liStyle}>{m}</li>
+                return <li style={liStyle}>
+                    <OverlayTrigger
+                        placement='right'
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={<Tooltip id="failure-tooltip">
+                            {m.type}: {m.message}
+                        </Tooltip>}
+                        trigger='click'
+                        >
+                        <div>
+                            {m.name}
+                        </div>
+                    </OverlayTrigger>
+                </li>
             })}
         </ul>
     </td>
