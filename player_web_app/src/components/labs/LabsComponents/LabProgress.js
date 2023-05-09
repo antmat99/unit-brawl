@@ -44,6 +44,9 @@ function LabProgress(props) {
         props.handleCheckStarted()
         const reports = await API.checkProgress(props.studentRepoLink, props.solutionRepoLink)
         setCompiles(reports.compiles)
+        if (reports.compiles) {
+
+        }
         setStudentTestNumber(reports.studentTestNumber)
         setMaxTestNumber(reports.maxTestNumber)
         setTestNumberExceeded(reports.testNumberExceeded)
@@ -57,35 +60,39 @@ function LabProgress(props) {
         */
 
         const coverageReport = reports.coverageReport
-        const requirements = Object.keys(testsReport.testCases).map((key) => {
-            var failed = false
-            return {
-                'classname': key.replace('it.polito.po.test.Test', ''),
-                'tests': testsReport.testCases[key].reduce((acc, cur) => {
-                    const tcObj = {
-                        'testname': cur.name,
-                    }
+        var requirements = undefined
+        if (reports.compiles) {
+            requirements = Object.keys(testsReport.testCases).map((key) => {
+                var failed = false
+                return {
+                    'classname': key.replace('it.polito.po.test.Test', ''),
+                    'tests': testsReport.testCases[key].reduce((acc, cur) => {
+                        const tcObj = {
+                            'testname': cur.name,
+                        }
 
-                    if (cur.failureType) {
-                        failed = true
-                        tcObj.failureType = cur.failureType;
-                    }
-                    if (cur.failureMessage) {
-                        tcObj.failureMessage = cur.failureMessage;
-                    }
-                    if (cur.errorType) {
-                        failed = true
-                        tcObj.errorType = cur.errorType
-                    }
-                    if (cur.errorMessage) {
-                        tcObj.errorMessage = cur.errorMessage
-                    }
-                    acc.push(tcObj);
-                    return acc;
-                }, []),
-                'failed': failed
-            }
-        })
+                        if (cur.failureType) {
+                            failed = true
+                            tcObj.failureType = cur.failureType;
+                        }
+                        if (cur.failureMessage) {
+                            tcObj.failureMessage = cur.failureMessage;
+                        }
+                        if (cur.errorType) {
+                            failed = true
+                            tcObj.errorType = cur.errorType
+                        }
+                        if (cur.errorMessage) {
+                            tcObj.errorMessage = cur.errorMessage
+                        }
+                        acc.push(tcObj);
+                        return acc;
+                    }, []),
+                    'failed': failed
+                }
+            })
+        }
+
         const instructionsCovered = (coverageReport !== null) ? coverageReport.instructionsCovered : undefined
         const instructionsMissed = (coverageReport !== null) ? coverageReport.instructionsMissed : undefined
         const methodsCovered = (coverageReport !== null) ? coverageReport.methodsCovered : undefined
@@ -247,7 +254,7 @@ function ReqCommentElement(props) {
         const methodObj = {
             name: methodName,
         }
-        if (test.failureType !== undefined){
+        if (test.failureType !== undefined) {
             methodObj.message = test.failureMessage
             methodObj.type = test.failureType
         }
@@ -271,7 +278,7 @@ function ReqCommentElement(props) {
                             {m.type}: {m.message}
                         </Tooltip>}
                         trigger='click'
-                        >
+                    >
                         <div>
                             {m.name}
                         </div>

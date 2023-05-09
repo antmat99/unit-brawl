@@ -21,6 +21,8 @@ const path = require('path');
  * 
  */
 
+exports.basePath = (process.env.DOCKER) ? '/' : './'
+
 exports.root = path.normalize('./test');
 
 exports.rootPackages = path.normalize('./test'+'/packages');
@@ -44,5 +46,5 @@ exports.toAbsolutePath = (relativePath) => {
         //remove ./
         relativePath = relativePath.slice(2);
     }
-    return path.join(path.normalize('C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server'),relativePath)
+    return path.join(path.normalize(process.cwd()),relativePath)
 }
