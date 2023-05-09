@@ -239,7 +239,7 @@ exports.getSolutionRepositoryLink = async (labId) => {
     }
 }
 
-exports.checkProgress = async (studentId) => {
+exports.checkProgress = async (sid) => {
     var result = {
         compiles: true,
         testsReport: {},
@@ -254,10 +254,12 @@ exports.checkProgress = async (studentId) => {
         coverageReport: {}
     }
 
+    const studentId = await userDao.getNicknameById(sid)
+
     const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
 
     try {
-        var studentRepoLink = await userDao.getActiveLabStudentLink(studentId)
+        var studentRepoLink = await userDao.getActiveLabStudentLink(sid)
         var solutionRepoLink = await labDao.getActiveLabSolutionLink()
         studentRepoLink = studentRepoLink + '.git'
         solutionRepoLink = solutionRepoLink + '.git'
@@ -278,10 +280,10 @@ exports.checkProgress = async (studentId) => {
         updateIdeal()
         //await shellService.cloneIdealSolution(solutionRepoLink, 'test/ideal_solution')
         
-        fileService.copyDirectoryFiles('test/ideal_solution/src/test/java/it/polito/po/test', `test/packages/check/${studentId}/src/test/java/it/polito/po/test`)
+        fileService.copyFolderSync('test/ideal_solution/test/it', `test/packages/check/${studentId}/test/it`)
         console.log('Running ideal tests...')
         try {
-            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X clean test -Dtest="AllTests"`);
+            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
             console.log('Ideal tests passed')
         } catch (e) {
             console.log('Ideal tests failed')
@@ -289,14 +291,15 @@ exports.checkProgress = async (studentId) => {
         rawReports.testsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
         console.log('Running student\'s tests...')
         try {
-            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X clean test -Dtest="TestClass"`);
+            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
             console.log('Student\'s tests passed')
         } catch (e) {
             console.log('Student\'s tests failed')
             result.studentTestsPass = false
         }
         if (result.studentTestsPass) {
-            result.studentTestNumber = getTestNumber(studentId)
+            // TODO: fix test number method
+            //result.studentTestNumber = getTestNumber(studentId)
             rawReports.coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
             result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
         } else {

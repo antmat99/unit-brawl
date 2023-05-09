@@ -72,6 +72,19 @@ exports.existDirectory = (directoryPath) => {
     return fs.existsSync(correctSrcPath);
 }
 
+exports.copyFolderSync = (src, dest) => {
+    fs.mkdirSync(dest, { recursive: true });
+    fs.readdirSync(src).forEach((file) => {
+        const srcPath = path.join(src, file);
+        const destPath = path.join(dest, file);
+        if (fs.statSync(srcPath).isDirectory()) {
+          exports.copyFolderSync(srcPath, destPath);
+        } else {
+          fs.copyFileSync(srcPath, destPath);
+        }
+      });
+}
+
 /**************************************** PARSING ********************************************/
 
 exports.getNumberOfTests = (testReportPath) => {
