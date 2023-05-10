@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  server:
+    image: unit-brawl-server
+    ports:
+      - "3001:3001"
+  player:
+    image: unit-brawl-player
+    ports:
+      - "3000:3000"
+  admin:
+    image: unit-brawl-admin
+    ports:
+      - "3002:3000"
