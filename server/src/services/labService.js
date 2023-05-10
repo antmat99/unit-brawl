@@ -281,18 +281,18 @@ exports.checkProgress = async (sid) => {
         console.log('Student\'s solution compiles')
         updateIdeal()
         
-        fileService.copyFolderSync(`${pathUtil.rootIdealsolution}\\test\\it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
+        fileService.copyFolderSync(`${pathUtil.rootIdealsolution}/test/it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
         console.log('Running ideal tests...')
         try {
-            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`)
+            e.execSync(`cd test/packages/check/s292488 && mvn -e -X -Dtest="**/it/**/*.java" clean test`)
             console.log('Ideal tests passed')
         } catch (e) {
             console.log('Ideal tests failed')
         }
-        rawReports.testsReport = fs.readFileSync(`./test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+        rawReports.testsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
         console.log('Running student\'s tests...')
         try {
-            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
+            e.execSync(`cd test/packages/check/s292488 && mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
             console.log('Student\'s tests passed')
         } catch (e) {
             console.log('Student\'s tests failed')
@@ -342,6 +342,7 @@ exports.checkCompile = async (studentId) => {
         shellService.mavenCompile(`test/packages/check/${studentId}`)
         return true
     } catch (e) {
+        console.log('Error during compile: ' + e)
         return false
     }
 }

@@ -8,7 +8,7 @@ app.use(express.json());
 var bodyParser = require('body-parser');
 app.use(bodyParser.text());
 
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 //middlewares
 const { passport, session, isLoggedIn, isAdmin } = require('./src/middlewares/login')

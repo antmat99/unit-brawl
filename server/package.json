@@ -15,5 +15,8 @@
     "passport-local": "^1.0.0",
     "path": "^0.12.7",
     "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.10"
   }
 }
