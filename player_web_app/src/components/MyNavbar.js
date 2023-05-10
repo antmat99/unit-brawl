@@ -8,7 +8,7 @@ function MyNavbar(props) {
         <Navbar className='navbar color-nav py-1' variant='dark' expand='sm' fixed='top' >
             <Link to='/' className='navbar-title'>
                 <Navbar.Brand>
-                    App Name
+                    Unit Brawl
                 </Navbar.Brand>
             </Link>
             <Navbar.Collapse className="justify-content-end">
