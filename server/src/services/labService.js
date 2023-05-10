@@ -267,8 +267,6 @@ exports.checkProgress = async (sid) => {
         solutionRepoLink = solutionRepoLink + '.git'
 
         result.maxTestNumber = await labDao.getActiveLabMaxTestNumber()
-
-        console.log(`Cloning student\'s solution in test/packages/check/${studentId}...`)
         await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
         console.log('Successfully cloned student\'s solution')
         console.log('Checking if it compiles...')
