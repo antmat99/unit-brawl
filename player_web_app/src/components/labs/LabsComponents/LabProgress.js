@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, Col, ProgressBar, Row, Spinner, Table, OverlayTrigger, Tooltip, Alert } from 'react-bootstrap';
+import { Button, Col, ProgressBar, Row, Spinner, Table, OverlayTrigger, Tooltip, Alert, Card, Popover } from 'react-bootstrap';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css';
 
@@ -45,24 +45,20 @@ function LabProgress(props) {
         const reports = await API.checkProgress(props.studentRepoLink, props.solutionRepoLink)
         setCompiles(reports.compiles)
         if (reports.compiles) {
+            setStudentTestNumber(reports.studentTestNumber)
+            setMaxTestNumber(reports.maxTestNumber)
+            setTestNumberExceeded(reports.testNumberExceeded)
+            setStudentTestsPass(reports.studentTestsPass)
+            const testsReport = reports.testsReport
+            /* If needed, reports.testsReport contains
+                - totalTests
+                - failures
+                - errors
+                - skipped
+            */
 
-        }
-        setStudentTestNumber(reports.studentTestNumber)
-        setMaxTestNumber(reports.maxTestNumber)
-        setTestNumberExceeded(reports.testNumberExceeded)
-        setStudentTestsPass(reports.studentTestsPass)
-        const testsReport = reports.testsReport
-        /* If needed, reports.testsReport contains
-            - totalTests
-            - failures
-            - errors
-            - skipped
-        */
-
-        const coverageReport = reports.coverageReport
-        var requirements = undefined
-        if (reports.compiles) {
-            requirements = Object.keys(testsReport.testCases).map((key) => {
+            const coverageReport = reports.coverageReport
+            const requirements = Object.keys(testsReport.testCases).map((key) => {
                 var failed = false
                 return {
                     'classname': key.replace('it.polito.po.test.Test', ''),
@@ -91,37 +87,43 @@ function LabProgress(props) {
                     'failed': failed
                 }
             })
+
+            const instructionsCovered = (coverageReport !== null) ? coverageReport.instructionsCovered : undefined
+            const instructionsMissed = (coverageReport !== null) ? coverageReport.instructionsMissed : undefined
+            const methodsCovered = (coverageReport !== null) ? coverageReport.methodsCovered : undefined
+            const methodsMissed = (coverageReport !== null) ? coverageReport.methodsMissed : undefined
+            const classesCovered = (coverageReport !== null) ? coverageReport.classesCovered : undefined
+            const classesMissed = (coverageReport !== null) ? coverageReport.classesMissed : undefined
+
+            const reportContent = {
+                compiles: reports.compiles,
+                studentTestNumber: reports.studentTestNumber,
+                maxTestNumber: reports.maxTestNumber,
+                testNumberExceeded: reports.testNumberExceeded,
+                studentTestsPass: reports.studentTestsPass,
+                requirements: requirements,
+                instructionsCovered: instructionsCovered,
+                instructionsMissed: instructionsMissed,
+                methodsCovered: methodsCovered,
+                methodsMissed: methodsMissed,
+                classesCovered: classesCovered,
+                classesMissed: classesMissed
+            }
+            props.handleCheckDone(reportContent)
+            setRequirements(requirements)
+            setInstructionsCovered(instructionsCovered)
+            setInstructionsMissed(instructionsMissed)
+            setMethodsCovered(methodsCovered)
+            setMethodsMissed(methodsMissed)
+            setClassesCovered(classesCovered)
+            setClassesMissed(classesMissed)
+        } else {
+            const reportContent = {
+                compiles: reports.compiles
+            }
+            props.handleCheckDone(reportContent)
         }
 
-        const instructionsCovered = (coverageReport !== null) ? coverageReport.instructionsCovered : undefined
-        const instructionsMissed = (coverageReport !== null) ? coverageReport.instructionsMissed : undefined
-        const methodsCovered = (coverageReport !== null) ? coverageReport.methodsCovered : undefined
-        const methodsMissed = (coverageReport !== null) ? coverageReport.methodsMissed : undefined
-        const classesCovered = (coverageReport !== null) ? coverageReport.classesCovered : undefined
-        const classesMissed = (coverageReport !== null) ? coverageReport.classesMissed : undefined
-
-        const reportContent = {
-            compiles: reports.compiles,
-            studentTestNumber: reports.studentTestNumber,
-            maxTestNumber: reports.maxTestNumber,
-            testNumberExceeded: reports.testNumberExceeded,
-            studentTestsPass: reports.studentTestsPass,
-            requirements: requirements,
-            instructionsCovered: instructionsCovered,
-            instructionsMissed: instructionsMissed,
-            methodsCovered: methodsCovered,
-            methodsMissed: methodsMissed,
-            classesCovered: classesCovered,
-            classesMissed: classesMissed
-        }
-        props.handleCheckDone(reportContent)
-        setRequirements(requirements)
-        setInstructionsCovered(instructionsCovered)
-        setInstructionsMissed(instructionsMissed)
-        setMethodsCovered(methodsCovered)
-        setMethodsMissed(methodsMissed)
-        setClassesCovered(classesCovered)
-        setClassesMissed(classesMissed)
         setCheckDone(true)
         setLoading(false)
     }
@@ -156,7 +158,10 @@ function LabProgress(props) {
                                 /> :
                                 <>
                                     <h5>Coverage report was not generated</h5>
-                                    <h6>This is normal if you have not provided any test yet. If you have, check if any of them fails, and make sure to place them in <code>src/test/java/it/polito/po/test/TestClass.java</code></h6>
+                                    <h6>This is normal if you have not provided any test yet. If you have, check if any of them fails,
+                                        and make sure to place the test classes in <code>test/sXXXXXX/</code>, where <code>sXXXXXX</code> is
+                                        your student ID. For example, if you have created two classes, <code>TestClassA.java</code> and <code>TestClassB.java</code>
+                                        , their location should be <code>test/sXXXXXX/TestClassA.java</code> and <code>test/sXXXXXX/TestClassB.java</code></h6>
                                 </>
 
                         }
@@ -169,7 +174,9 @@ function LabProgress(props) {
                 </Row>
             </>
         } else {
-            return <h5>Your solution does not compile...</h5>
+            return <>
+                <CompiledFailedCard checkProgress={checkProgress} />
+            </>
         }
     } else if (!checkDone && !loading) {
         return <>
@@ -243,6 +250,7 @@ function ReqReportRow(props) {
 }
 
 function ReqCommentElement(props) {
+
     const liStyle = { margin: 0, paddingBottom: '3px', listStyle: 'circle' }
     const failingTests = props.tests.filter(t => (t.failureType !== undefined || t.errorType !== undefined))
     let failingMethods = []
@@ -271,22 +279,33 @@ function ReqCommentElement(props) {
         <ul>
             {failingMethods.map((m) => {
                 return <li style={liStyle}>
-                    <OverlayTrigger
-                        placement='right'
-                        delay={{ show: 250, hide: 400 }}
-                        overlay={<Tooltip id="failure-tooltip">
-                            {m.type}: {m.message}
-                        </Tooltip>}
-                        trigger='click'
-                    >
-                        <div>
-                            {m.name}
-                        </div>
-                    </OverlayTrigger>
+                    <ListElement m={m}/>
                 </li>
             })}
         </ul>
     </td>
+}
+
+function ListElement(props) {
+    const [showPopover, setShowPopover] = useState(false);
+    return <>
+        <OverlayTrigger
+            placement='right'
+            delay={{ show: 250, hide: 400 }}
+            overlay={<Popover id="popover-basic">
+                <Popover.Header as="h3">{props.m.type}</Popover.Header>
+                <Popover.Body>
+                    {props.m.message}
+                </Popover.Body>
+            </Popover>}
+            trigger='click'
+            onToggle={(show) => setShowPopover(show)}
+        >
+            <div style={{ fontWeight: showPopover ? 'bold' : 'normal' }}>
+                {props.m.name}
+            </div>
+        </OverlayTrigger>
+    </>
 }
 
 function colorPicker(value) {
@@ -375,6 +394,17 @@ function CoverageDashboard(props) {
             </Col>
         </Row>
     )
+}
+
+function CompiledFailedCard(props) {
+    return (
+        <Card bg='danger' text='light'>
+            <Card.Body>
+                <Card.Title>Your solution does not compile...</Card.Title>
+                <Button variant='light' onClick={props.checkProgress}>Try again</Button>
+            </Card.Body>
+        </Card>
+    );
 }
 
 export default LabProgress
