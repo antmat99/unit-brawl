@@ -9,6 +9,7 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.text());
 
 const port = process.env.PORT || 3001;
+const SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001'
 
 //middlewares
 const { passport, session, isLoggedIn, isAdmin } = require('./src/middlewares/login')
@@ -61,5 +62,5 @@ app.use('/gitlab', gitlab);
 
 // Activate the server
 app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+  console.log(`Server listening at ${SERVER_URL}`);
 });
