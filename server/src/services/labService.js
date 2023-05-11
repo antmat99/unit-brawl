@@ -258,8 +258,6 @@ exports.checkProgress = async (sid) => {
 
     const studentId = await userDao.getNicknameById(sid)
 
-    const correctProjectDirPath = path.join(process.cwd().toString(), `test/packages/check/${studentId}`)
-
     try {
         var studentRepoLink = await userDao.getActiveLabStudentLink(sid)
         var solutionRepoLink = await labDao.getActiveLabSolutionLink()
@@ -297,8 +295,7 @@ exports.checkProgress = async (sid) => {
             result.studentTestsPass = false
         }
         if (result.studentTestsPass) {
-            // TODO: fix test number method
-            //result.studentTestNumber = getTestNumber(studentId)
+            result.studentTestNumber = getTestNumber(studentId)
             rawReports.coverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
             result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
         } else {
@@ -428,17 +425,15 @@ exports.analyzeCoverageReport = (rep) => {
 }
 
 function getTestNumber(studentId) {
-    const reportOutput = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.TestClass.xml`)
-    const options = {
-        ignoreAttributes: false,
-        attributeNamePrefix: "",
-        parseNodeValue: true
-    };
-    const parser = new xml.XMLParser(options);
-    const report = parser.parse(reportOutput)
-
-    const testsuite = report['testsuite']
-    return testsuite.tests
+    try {
+        const output = e.execSync('cd test/packages/check/s292488 && grep -c "<testcase" target/surefire-reports/*.xml | wc -l').toString().trim()
+        const testNumber = parseInt(output, 10)
+        console.log(`Found ${testNumber} tests in student package`)
+        return testNumber
+    } catch(e) {
+        console.log(e)
+        return -1
+    }
 }
 
 /* Utility */
