@@ -154,13 +154,12 @@ function ModalJoinLab(props) {
             setBackendErrorMessage('');
             try {
                 API.joinLab(link)
+                handleClose()
             } catch (e) {
-                console.log('Error joining lab: ' + e)
-                setBackendError(true);
-                setBackendErrorMessage(e);
+                setBackendError(true)
+                setBackendErrorMessage(`Something went wrong. Is ${link} the correct link?`)
                 event.stopPropagation();
             }
-            handleClose()
         }
     }
 
@@ -227,10 +226,10 @@ function ModalEditRepository(props) {
             setBackendErrorMessage('');
             try {
                 await API.editRepository(lab.id, link);
+                handleClose()
             } catch (errorMessage) {
-                setBackendError(true);
-                setBackendErrorMessage(errorMessage);
-                event.preventDefault();
+                setBackendError(true)
+                setBackendErrorMessage(`Something went wrong. Is ${link} the correct link?`)
                 event.stopPropagation();
             }
         }
