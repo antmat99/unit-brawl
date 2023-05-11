@@ -276,7 +276,7 @@ exports.checkProgress = async (sid) => {
         }
         console.log('Student\'s solution compiles')
         updateIdeal()
-        
+
         fileService.copyFolderSync(`${pathUtil.rootIdealsolution}/test/it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
         console.log('Running ideal tests...')
         try {
@@ -426,11 +426,10 @@ exports.analyzeCoverageReport = (rep) => {
 
 function getTestNumber(studentId) {
     try {
-        const output = e.execSync('cd test/packages/check/s292488 && grep -c "<testcase" target/surefire-reports/*.xml | wc -l').toString().trim()
-        const testNumber = parseInt(output, 10)
-        console.log(`Found ${testNumber} tests in student package`)
-        return testNumber
-    } catch(e) {
+        const output = e.execSync('cd test/packages/check/s292488 && grep -h "<testcase" target/surefire-reports/*.xml | sed \'s/<testcase[^>]* name="//\' | sed \'s/" .*//\'').toString();
+        const testMethods = output.split('\n').filter(method => method.trim() !== '');
+        return testMethods.length;
+    } catch (e) {
         console.log(e)
         return -1
     }
@@ -451,7 +450,7 @@ function updateIdeal() {
 
         const gitFetchOutput = e.execSync('git fetch', { encoding: 'utf-8' });
         const gitDiffOutput = e.execSync('git diff HEAD origin/HEAD', { encoding: 'utf-8' });
-    
+
         if (gitDiffOutput) {
             e.execSync('git pull', { encoding: 'utf-8' });
             console.log('Ideal solution updated.');
