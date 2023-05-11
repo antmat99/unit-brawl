@@ -170,13 +170,13 @@ function LabMain(props) {
                             }}
                         >
                             <Nav.Item>
-                                <Nav.Link eventKey={MainComponents.Trace}>Trace</Nav.Link>
+                                <Nav.Link eventKey={MainComponents.Trace}>Requirements</Nav.Link>
                             </Nav.Item>
                             {
                                 (!lab.expired && (labsAttendedIds.includes(lab.id))) &&
                                 <>
                                     <Nav.Item>
-                                        <Nav.Link eventKey={MainComponents.Progress}>Your progress</Nav.Link>
+                                        <Nav.Link eventKey={MainComponents.Progress}>Progress</Nav.Link>
                                     </Nav.Item>
                                 </>
                             }

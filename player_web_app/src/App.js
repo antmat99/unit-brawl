@@ -9,6 +9,7 @@ import Labs from './components/labs/Labs';
 import LeaderboardSection from './components/leaderboard/LeaderboardSection';
 import LoginPage from './components/login/LoginPage';
 import RegisterPage from './components/login/RegisterPage';
+import About from './components/About'
 import { useState, useEffect } from 'react';
 import API from './API';
 
@@ -99,7 +100,7 @@ function Main() {
                     <LeaderboardSection />
                   } />
                   <Route path='/about' element={
-                    <div>TODO Setup about page</div>
+                    <About/>
                   } />
                 </>
                 :
@@ -108,7 +109,7 @@ function Main() {
                     <HomePage />
                   } />
                   <Route path='/about' element={
-                    <div>TODO Setup about page</div>
+                    <About/>
                   } />
                   <Route path='/register' element={
                     <RegisterPage doRegister={doRegister}/>
