@@ -218,11 +218,25 @@ exports.getUserLabRepositoryLink = async (userId, labId) => {
 
 exports.updateUserLabRepositoryLink = async (userId, labId, link) => {
     try {
-        return await userLabDao.updateUserLabRepositoryLink(userId, labId, link);
+        if(isValidGitRepo(link)) {
+            return await userLabDao.updateUserLabRepositoryLink(userId, labId, link);
+        }
+        else {
+            throw new Exception(500, 'Invalid git repository link')
+        }
     } catch (e) {
         throw new Exception(500, e.message)
     }
 }
+
+const isValidGitRepo = (repoLink) => {
+    try {
+      e.execSync(`git ls-remote ${repoLink}`);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 
 exports.updateUserAvatarSelected = async (userId, avatarId) => {
     try {

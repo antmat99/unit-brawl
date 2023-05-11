@@ -223,18 +223,31 @@ exports.joinLab = async (userId, repositoryLink) => {
         const activeLab = await labDao.getActiveLab();
         if (activeLab.length == 0) throw (new Exception(404, 'No active labs found.'));
         if (activeLab.length > 1) throw (new Exception(500, 'Database error: there should be at most one active lab, but found ' + ret.length + '.'));
-        const ret = await userLabDao.insertUserLab(userId, activeLab[0].id, repositoryLink);
-        //initialize coverage achievements
-        const uncompletedCoverageAchievements = await achievementDao.getUncompletedCoverageAchievements(userId);
-        for (let achievement of uncompletedCoverageAchievements) {
-            await achievementDao.addUserAchievementFake(userId, achievement.achievement_id, 0, achievement.code);
-        }
-        return ret;
+        if(isValidGitRepo(repositoryLink)) {
+            const ret = await userLabDao.insertUserLab(userId, activeLab[0].id, repositoryLink);
+            const uncompletedCoverageAchievements = await achievementDao.getUncompletedCoverageAchievements(userId);
+            for (let achievement of uncompletedCoverageAchievements) {
+                await achievementDao.addUserAchievementFake(userId, achievement.achievement_id, 0, achievement.code);
+            }
+            return ret;
+        } else {
+            throw new Exception(500, 'Invalid git repository link')
+        }        
     } catch (e) {
         if (e.code != 500) throw new Exception(e.code, e.message)
         throw new Exception(500, e.message)
     }
 }
+
+const isValidGitRepo = (repoLink) => {
+  try {
+    e.execSync(`git ls-remote ${repoLink}`);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 
 exports.stopLabIfExpired = () => {
     try {

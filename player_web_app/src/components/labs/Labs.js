@@ -158,7 +158,6 @@ function ModalJoinLab(props) {
             } catch (e) {
                 setBackendError(true)
                 setBackendErrorMessage(`Something went wrong. Is ${link} the correct link?`)
-                event.stopPropagation();
             }
         }
     }
@@ -230,7 +229,6 @@ function ModalEditRepository(props) {
             } catch (errorMessage) {
                 setBackendError(true)
                 setBackendErrorMessage(`Something went wrong. Is ${link} the correct link?`)
-                event.stopPropagation();
             }
         }
         else { //invalid text in form
