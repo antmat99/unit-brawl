@@ -99,6 +99,7 @@ const getLabLeaderboardAdmin = async (labId) => {
     }
 }
 
+/*
 exports.createLab = async (lab) => {
     try {
         //TODO it should be atomic
@@ -112,6 +113,25 @@ exports.createLab = async (lab) => {
         await labDao.insertLabIdealSolution(id, lab.linkToIdealSolution);
         await achievementDao.clearAchievementFake();
     } catch (e) {
+        console.log('Error creating lab: ' + e)
+        throw new Exception(500, e.message)
+    }
+}
+
+*/
+
+exports.createLab = async (lab) => {
+    try {
+        console.log('Cleaning ideal solution directory...')
+        fileService.clearDirectory('test/ideal_solution')
+        console.log('Cloning ideal solution...')
+        await shellService.cloneIdealSolution(lab.linkToIdealSolution, 'test/ideal_solution')
+        console.log('Successfully cloned ideal solution')
+        const id = await labDao.createLab(lab)
+        await labDao.insertLabIdealSolution(id, lab.linkToIdealSolution);
+        await achievementDao.clearAchievementFake();
+        console.log('Created DB entry for new lab')
+    } catch(e) {
         console.log('Error creating lab: ' + e)
         throw new Exception(500, e.message)
     }

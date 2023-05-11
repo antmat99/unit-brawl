@@ -23,25 +23,6 @@ function Labs() {
     const [numberOfPlayers, setNumberOfPayers] = useState(0);
     const [dirty, setDirty] = useState(true);
 
-    /*     useEffect(() => {
-            const f = async () => {
-                if (dirty) {
-                    await API.getLabs()
-                        .then(list => {
-                            setLabs(list);
-                            setSelectedLab(list[list.length - 1]);
-                        })
-                        .catch(err => handleError(err));
-                    await API.getActiveLab()
-                        .then(res => {
-                            setActiveLab(res);
-                        }).catch(err => handleError(err));
-                    setDirty(false);
-                }
-            }
-            f();
-        }, [dirty]) */
-
     useEffect(() => {
         const update = async () => {
             if (dirty) {
@@ -192,9 +173,14 @@ function ModalStartEditLab(props) {
                 }
                 else { //start lab
                     //set fake id as 0, backend will overwrite it
-                    await API.createAndStartLab(new Lab(0, name, date, trace, false, null, testMaxNumber, linkToIdealSolution))
+                    try {
+                        await API.createAndStartLab(new Lab(0, name, date, trace, false, null, testMaxNumber, linkToIdealSolution))
+                        handleClose()
+                    } catch(e) {
+                        setBackendError(true)
+                        setBackendErrorMessage(`Something went wrong. Is ${linkToIdealSolution} the correct link?`)
+                    }
                 }
-                handleClose()
             } catch (errorMessage) {
                 setBackendError(true);
                 setBackendErrorMessage(errorMessage);

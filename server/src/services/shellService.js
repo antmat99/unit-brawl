@@ -13,10 +13,17 @@ exports.getAbsolutePath = (folderName) => {
 }
 
 exports.cloneIdealSolution = async (linkToRepo, directoryName) => {
-    console.log('Cloning repo ' + linkToRepo + ' into ' + directoryName);
-    const { stdout, stderr } = await exec(`git clone ${linkToRepo} ${directoryName}`);
-    console.log(`stdout clone: ${stdout}`);
-    console.log(`stderr clone: ${stderr}`);
+    try {
+        console.log('Cloning repo ' + linkToRepo + ' into ' + directoryName);
+        const { stdout, stderr } = await exec(`git clone ${linkToRepo} ${directoryName}`);
+        console.log(`stdout clone: ${stdout}`);
+        console.log(`stderr clone: ${stderr}`);
+    } catch(e) {
+        console.log('Error cloning ideal solution')
+        console.log('Is the link correct? ' + linkToRepo)
+        throw(e)
+    }
+    
 }
 
 exports.cloneRepoInDirectory = async (linkToRepo, directoryName) => {
