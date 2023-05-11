@@ -46,7 +46,7 @@ exports.mavenCompile = (projectDir) => {
     const startTime = performance.now()
     const correctProjectDirPath = utilPath.toAbsolutePath(path.normalize(projectDir));
     try {
-        e.execSync(`cd test/packages/check/s292488 && mvn clean compile -X`)
+        e.execSync(`cd ${projectDir} && mvn clean compile -X`)
         //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn clean compile`);
 
     } catch (e) {
