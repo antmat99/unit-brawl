@@ -2,6 +2,8 @@ version: '3.8'
 services:
   server:
     image: unit-brawl-server
+    volumes:
+      - database:/server
     ports:
       - "3001:3001"
   player:
@@ -12,3 +14,5 @@ services:
     image: unit-brawl-admin
     ports:
       - "3002:3000"
+volumes:
+  database:
