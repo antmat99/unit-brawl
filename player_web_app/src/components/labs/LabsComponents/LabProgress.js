@@ -10,7 +10,7 @@ function LabProgress(props) {
     const [loading, setLoading] = useState(false)
     const [checkDone, setCheckDone] = useState(false)
     const [compiles, setCompiles] = useState(false)
-    const [studentTestNumber, setStudentTestNumber] = useState(false)
+    const [studentTestNumberByRequirement, setStudentTestNumberByRequirement] = useState(false)
     const [maxTestNumber, setMaxTestNumber] = useState(false)
     const [testNumberExceeded, setTestNumberExceeded] = useState(false)
     const [studentTestsPass, setStudentTestsPass] = useState()
@@ -26,7 +26,7 @@ function LabProgress(props) {
         setLoading(props.labProgressState.loading)
         setCheckDone(props.labProgressState.checkDone)
         setCompiles(props.labProgressState.compiles)
-        setStudentTestNumber(props.labProgressState.studentTestNumber)
+        setStudentTestNumberByRequirement(props.labProgressState.studentTestNumberByRequirement)
         setMaxTestNumber(props.labProgressState.maxTestNumber)
         setTestNumberExceeded(props.labProgressState.testNumberExceeded)
         setStudentTestsPass(props.labProgressState.studentTestsPass)
@@ -45,7 +45,7 @@ function LabProgress(props) {
         const reports = await API.checkProgress(props.studentRepoLink, props.solutionRepoLink)
         setCompiles(reports.compiles)
         if (reports.compiles) {
-            setStudentTestNumber(reports.studentTestNumber)
+            setStudentTestNumberByRequirement(reports.studentTestNumberByRequirement)
             setMaxTestNumber(reports.maxTestNumber)
             setTestNumberExceeded(reports.testNumberExceeded)
             setStudentTestsPass(reports.studentTestsPass)
@@ -59,9 +59,12 @@ function LabProgress(props) {
 
             const coverageReport = reports.coverageReport
             const requirements = Object.keys(testsReport.testCases).map((key) => {
+                const classname = key.replace('it.polito.po.test.Test', '').substring(0, 2)
+                const testNumber = reports.studentTestNumberByRequirement[classname]
                 var failed = false
                 return {
-                    'classname': key.replace('it.polito.po.test.Test', ''),
+                    'classname': classname,
+                    'testNumber': testNumber,
                     'tests': testsReport.testCases[key].reduce((acc, cur) => {
                         const tcObj = {
                             'testname': cur.name,
@@ -97,7 +100,7 @@ function LabProgress(props) {
 
             const reportContent = {
                 compiles: reports.compiles,
-                studentTestNumber: reports.studentTestNumber,
+                studentTestNumberByRequirement: reports.studentTestNumberByRequirement,
                 maxTestNumber: reports.maxTestNumber,
                 testNumberExceeded: reports.testNumberExceeded,
                 studentTestsPass: reports.studentTestsPass,
@@ -131,17 +134,14 @@ function LabProgress(props) {
     if (checkDone && !loading) {
         if (compiles) {
             return <>
-                {testNumberExceeded && <>
-                    <Alert variant='danger'>
-                        Tests found in your solution: {studentTestNumber} - Maximum number of tests allowed: {maxTestNumber}
-                    </Alert>
-                </>}
                 <Row>
                     <Col>
                         <h3 style={{ marginBottom: '20px' }}>Tests report summary</h3>
                         <TestsProgressBars requirements={requirements} />
                         <ReqReportTable
                             requirements={requirements}
+                            studentTestNumberByRequirement={studentTestNumberByRequirement}
+                            maxTestNumber={maxTestNumber}
                         />
                     </Col>
                     <Col>
@@ -231,22 +231,40 @@ function ReqReportTable(props) {
                 </tr>
             </thead>
             <tbody>
-                {props.requirements.map((r) => (<ReqReportRow req={r} />))}
+                {props.requirements.map((r) => (<ReqReportRow req={r} maxTestNumber={props.maxTestNumber}/>))}
             </tbody>
         </Table>
     </>
 }
 
 function ReqReportRow(props) {
+    var color
+    var status
+    if (props.req.failed) {
+        status = 'Failed'
+        color = '#fa3939'
+    } else if (props.req.testNumber > props.maxTestNumber) {
+        status = 'Exceeded test limit'
+        color = '#fab039'
+    } else {
+        status = 'Passed'
+        color = '#6afa39'
+    }
     return <tr>
         <td>{props.req.classname.replace('it.polito.po.test.Test', '')}</td>
-        <td style={{ backgroundColor: props.req.failed ? '#fa3939' : '#6afa39' }}>{(props.req.failed) ? 'Failed' : 'Passed'}</td>
-        {
-            props.req.failed ?
-                <ReqCommentElement tests={props.req.tests} />
-                : <div>All the requested methods pass their tests!</div>
-        }
+        <td style={{ backgroundColor: color }}>{status}</td>
+        <td>
+            {status === 'Failed' && <ReqCommentElement tests={props.req.tests} exceeded={props.req.testNumber > props.maxTestNumber} />}
+            {status === 'Exceeded test limit' && <ExceededLimitElement limit={props.maxTestNumber} number={props.req.testNumber}/>}
+            {status === 'Passed' && <div>All the requested methods pass their tests!</div>}
+        </td>
     </tr>
+}
+
+function ExceededLimitElement(props) {
+    return <>
+        Test number limit per requirement: {props.limit} - Your tests for this requirement: {props.number}
+    </>
 }
 
 function ReqCommentElement(props) {
@@ -279,7 +297,7 @@ function ReqCommentElement(props) {
         <ul>
             {failingMethods.map((m) => {
                 return <li style={liStyle}>
-                    <ListElement m={m}/>
+                    <ListElement m={m} />
                 </li>
             })}
         </ul>

@@ -279,7 +279,7 @@ exports.checkProgress = async (sid) => {
         compiles: true,
         testsReport: {},
         coverageReport: {},
-        studentTestNumber: undefined,
+        studentTestNumberByRequirement: undefined,
         maxTestNumber: undefined,
         studentTestsPass: true
     }
@@ -311,6 +311,7 @@ exports.checkProgress = async (sid) => {
         updateIdeal()
 
         fileService.copyFolderSync(`${pathUtil.rootIdealsolution}/test/it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
+        
         console.log('Running ideal tests...')
         try {
             e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
@@ -318,7 +319,9 @@ exports.checkProgress = async (sid) => {
         } catch (e) {
             console.log('Ideal tests failed')
         }
+        
         rawReports.testsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+        
         console.log('Running student\'s tests...')
         try {
             e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/${studentId}/**/*.java" clean test`);
@@ -328,17 +331,13 @@ exports.checkProgress = async (sid) => {
             result.studentTestsPass = false
         }
         if (result.studentTestsPass) {
-            result.studentTestNumber = getTestNumber(studentId)
+            result.studentTestNumberByRequirement = countTestByRequirement(studentId)
             rawReports.coverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
             result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
         } else {
             console.log('Student\'s tests fail, did not generate coverage report')
         }
         result.testsReport = this.analyzeTestReport(rawReports.testsReport)
-        result.testNumberExceeded = (result.studentTestNumber > result.maxTestNumber)
-        if (result.testNumberExceeded) {
-            console.log('Student\'s solution has ' + result.studentTestNumber + ' tests, which exceeds the maximum number: ' + result.maxTestNumber)
-        }
         cleanup(studentId)
         return result
     } catch (e) {
@@ -466,6 +465,45 @@ function getTestNumber(studentId) {
         console.log(e)
         return -1
     }
+}
+
+function countTestByRequirement(studentId) {
+
+    var result = {}
+
+    const options = {
+        ignoreAttributes: false,
+        attributeNamePrefix: "",
+        parseNodeValue: true
+    };
+    const parser = new xml.XMLParser(options);
+
+    const xmlFiles = fs.readdirSync(`test/packages/check/${studentId}/target/surefire-reports`).filter(file => path.extname(file) === '.xml')
+    xmlFiles.forEach(file => {
+        const rep = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/${file}`)
+        const report = parser.parse(rep)
+        const testsuite = report['testsuite']
+        const testcases = testsuite['testcase']
+        console.log(testcases)
+        if(testcases.length > 1) {
+            testcases.forEach(tc => {
+                const req = `R${Number.parseInt(tc.name[5])}`
+                if(!result.hasOwnProperty(req)){
+                    result[req] = 1
+                } else {
+                    result[req]++
+                }
+            })
+        } else {
+            const req = `R${Number.parseInt(testcases.name[5])}`
+                if(!result.hasOwnProperty(req)){
+                    result[req] = 1
+                } else {
+                    result[req]++
+                }
+        }
+    })
+    return result
 }
 
 /* Utility */
