@@ -99,27 +99,6 @@ const getLabLeaderboardAdmin = async (labId) => {
     }
 }
 
-/*
-exports.createLab = async (lab) => {
-    try {
-        //TODO it should be atomic
-        console.log('Lab: ' + JSON.stringify(lab))
-        const id = await labDao.createLab(lab);
-        console.log('Cleaning ideal solution directory...')
-        fileService.clearDirectory('test/ideal_solution')
-        console.log('Cloning ideal solution...')
-        await shellService.cloneIdealSolution(lab.linkToIdealSolution, 'test/ideal_solution')
-        console.log('Successfully cloned ideal solution')
-        await labDao.insertLabIdealSolution(id, lab.linkToIdealSolution);
-        await achievementDao.clearAchievementFake();
-    } catch (e) {
-        console.log('Error creating lab: ' + e)
-        throw new Exception(500, e.message)
-    }
-}
-
-*/
-
 exports.createLab = async (lab) => {
     try {
         console.log('Cleaning ideal solution directory...')
@@ -296,16 +275,30 @@ exports.checkProgress = async (sid) => {
         studentRepoLink = studentRepoLink + '.git'
 
         result.maxTestNumber = await labDao.getActiveLabMaxTestNumber()
+        if(fs.existsSync(`test/packages/check/${studentId}`) && fs.readdirSync(`test/packages/check/${studentId}`).length !== 0) {
+            fileService.clearDirectory(`test/packages/check/${studentId}`)
+        }
         await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
         console.log('Successfully cloned student\'s solution')
-        console.log('Checking if it compiles...')
-        result.compiles = await this.checkCompile(studentId)
-        if (!result.compiles) {
+        console.log('Checking if source code compiles...')
+        const sourceCodeCompiles = await this.checkCompile(studentId)
+        if (!sourceCodeCompiles) {
+            result.compiles = false
             console.log('Student\'s solution does not compile')
             cleanup(studentId)
             return result
         }
-        console.log('Student\'s solution compiles')
+        console.log('Student\'s source code compiles')
+        console.log('Checking if tests compile...')
+        const testsCompile = await this.checkTestCompile(studentId)
+        if (!testsCompile) {
+            result.compiles = false
+            console.log('Student\'s tests do not compile')
+            cleanup(studentId)
+            return result
+        }
+        result.compiles = true
+        console.log('Student\'s tests compile')
         updateIdeal()
 
         fileService.copyFolderSync(`${pathUtil.rootIdealsolution}/test/it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
@@ -344,30 +337,22 @@ exports.checkProgress = async (sid) => {
     }
 }
 
-exports.test = async (studentId) => {
-    var result = {
-        compiles: true,
-        testReport: {},
-        coverageReport: {}
-    }
-
-    try {
-        const testReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
-        const coverageReport = fs.readFileSync(`test/packages/check/${studentId}/target/site/jacoco/jacoco.xml`)
-        result.testReport = this.analyzeTestReport(testReport)
-        result.coverageReport = this.analyzeCoverageReport(coverageReport)
-        return result
-    } catch (e) {
-        console.error('Error checking progress: ' + e)
-    }
-}
-
 exports.checkCompile = async (studentId) => {
     try {
         shellService.mavenCompile(`test/packages/check/${studentId}`)
         return true
     } catch (e) {
         console.log('Error during compile: ' + e)
+        return false
+    }
+}
+
+exports.checkTestCompile = async (studentId) => {
+    try {
+        shellService.mavenTestCompile(`test/packages/check/${studentId}`)
+        return true
+    } catch (e) {
+        console.log('Error during test compile: ' + e)
         return false
     }
 }
@@ -454,17 +439,6 @@ exports.analyzeCoverageReport = (rep) => {
     return result
 }
 
-function getTestNumber(studentId) {
-    try {
-        const output = e.execSync(`cd test/packages/check/${studentId} && grep -h "<testcase" target/surefire-reports/*.xml | sed \'s/<testcase[^>]* name="//\' | sed \'s/" .*//\'`).toString();
-        const testMethods = output.split('\n').filter(method => method.trim() !== '');
-        return testMethods.length;
-    } catch (e) {
-        console.log(e)
-        return -1
-    }
-}
-
 function countTestByRequirement(studentId) {
 
     var result = {}
@@ -482,7 +456,6 @@ function countTestByRequirement(studentId) {
         const report = parser.parse(rep)
         const testsuite = report['testsuite']
         const testcases = testsuite['testcase']
-        console.log(testcases)
         if(testcases.length > 1) {
             testcases.forEach(tc => {
                 const req = `R${Number.parseInt(tc.name[5])}`
