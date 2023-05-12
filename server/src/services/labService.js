@@ -293,9 +293,7 @@ exports.checkProgress = async (sid) => {
 
     try {
         var studentRepoLink = await userDao.getActiveLabStudentLink(sid)
-        var solutionRepoLink = await labDao.getActiveLabSolutionLink()
         studentRepoLink = studentRepoLink + '.git'
-        solutionRepoLink = solutionRepoLink + '.git'
 
         result.maxTestNumber = await labDao.getActiveLabMaxTestNumber()
         await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
@@ -330,8 +328,8 @@ exports.checkProgress = async (sid) => {
             console.log('Student\'s tests failed')
             result.studentTestsPass = false
         }
+        result.studentTestNumberByRequirement = countTestByRequirement(studentId)
         if (result.studentTestsPass) {
-            result.studentTestNumberByRequirement = countTestByRequirement(studentId)
             rawReports.coverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
             result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
         } else {
@@ -510,7 +508,6 @@ function countTestByRequirement(studentId) {
 function cleanup(studentId) {
     fileService.clearDirectory(`test/packages/check/${studentId}`)
     fileService.deleteDirectory(`test/packages/check/${studentId}`)
-    fileService.deleteDirectory(`test/packages/check`)
 }
 
 function updateIdeal() {
