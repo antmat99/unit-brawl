@@ -169,7 +169,13 @@ function ModalStartEditLab(props) {
             setBackendErrorMessage('');
             try {
                 if (edit) { //edit lab
-                    await API.updateLab(new Lab(labToEdit.id, name, date, trace, false, labToEdit.leaderboard, testMaxNumber, linkToIdealSolution))
+                    try {
+                        await API.updateLab(new Lab(labToEdit.id, name, date, trace, false, labToEdit.leaderboard, testMaxNumber, linkToIdealSolution))
+                        handleClose()
+                    } catch(e) {
+                        setBackendError(true)
+                        setBackendErrorMessage(`Something went wrong. Is ${linkToIdealSolution} the correct link?`)
+                    }
                 }
                 else { //start lab
                     //set fake id as 0, backend will overwrite it

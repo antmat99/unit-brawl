@@ -131,14 +131,18 @@ exports.getActiveLab = async () => {
 exports.updateLab = async (lab) => {
     try {
         //TODO it should be atomic
-        await labDao.updateLab(lab);
-        await labDao.updateLabLinkToIdealSolution(lab);
-        fileService.clearDirectory('test/ideal_solution')
-        await shellService.cloneIdealSolution(lab.linkToIdealSolution, 'test/ideal_solution')
-        let ret = await labDao.getLabByIdAdmin(lab.id);
-        const leaderboard = await getLabLeaderboardAdmin(lab.id)
-        ret['leaderboard'] = leaderboard;
-        return ret;
+        if(isValidGitRepo(lab.linkToIdealSolution)) {
+            await labDao.updateLab(lab);
+            fileService.clearDirectory('test/ideal_solution')
+            await shellService.cloneIdealSolution(lab.linkToIdealSolution, 'test/ideal_solution')
+            await labDao.updateLabLinkToIdealSolution(lab);
+            let ret = await labDao.getLabByIdAdmin(lab.id);
+            const leaderboard = await getLabLeaderboardAdmin(lab.id)
+            ret['leaderboard'] = leaderboard;
+            return ret;
+        } else {
+            throw new Exception(500, `Invalid git repository link: ${lab.linkToIdealSolution}`)
+        }
     } catch (e) {
         throw new Exception(500, e.message)
     }
