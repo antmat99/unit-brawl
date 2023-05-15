@@ -444,6 +444,21 @@ async function checkProgress(studentRepoLink, solutionRepoLink) {
     }
 }
 
+async function checkCoverage() {
+    const response = await fetch(URL + '/labs/coverage',
+        {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+        })
+    const progress = await response.json()
+    if (response.ok) {
+        return progress
+    } else {
+        console.log('ERROR: could not check lab progress')
+    }
+}
+
 async function test() {
     const response = await fetch(URL + '/labs/progress/test', { credentials: 'include' })
     const progress = await response.json()
@@ -486,6 +501,7 @@ const API = {
     getTestsReport,
     checkProgress,
     test,
-    getSolutionRepositoryLink
+    getSolutionRepositoryLink,
+    checkCoverage
 };
 export default API;

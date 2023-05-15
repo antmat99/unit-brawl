@@ -132,10 +132,24 @@ exports.checkProgress = async (req, res) => {
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json(result)
     } catch(e) {
+        console.log(e)
         res.status(e.code).end(e.message)
     }
 }
 
+exports.checkCoverage = async(req, res) => {
+    try {
+        const result = await labService.checkCoverage(req.user.id)
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json(result)
+    } catch(e) {
+        console.log(e)
+        res.status(e.code).end(e.message)
+    }
+}
+
+
+/* Remove */
 exports.test = async (req, res) => {
     try {
         const result = await labService.test()
@@ -146,6 +160,7 @@ exports.test = async (req, res) => {
     }
 }
 
+/* Remove */
 exports.checkSolutionCompiles = async (req, res) => {
     try {
         const report = await labService.checkSolutionCompiles(req.body.repositoryLink)

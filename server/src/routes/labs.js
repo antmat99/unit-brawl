@@ -15,6 +15,8 @@ router.post('/join', isLabActive, labController.joinLab);
 
 router.post('/progress', isLabActive, labController.checkProgress);
 
+router.post('/coverage', isLabActive, labController.checkCoverage)
+
 router.get('/progress/test', isLabActive, labController.test)
 
 module.exports = router; 

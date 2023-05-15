@@ -260,25 +260,17 @@ exports.getSolutionRepositoryLink = async (labId) => {
 exports.checkProgress = async (sid) => {
     var result = {
         compiles: true,
-        testsReport: {},
-        coverageReport: {},
-        studentTestNumberByRequirement: undefined,
-        maxTestNumber: undefined,
-        studentTestsPass: true
+        testsReport: {}
     }
 
-    var rawReports = {
-        testsReport: {},
-        coverageReport: {}
-    }
-
+    
     const studentId = await userDao.getNicknameById(sid)
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
 
     try {
         var studentRepoLink = await userDao.getActiveLabStudentLink(sid)
         studentRepoLink = studentRepoLink + '.git'
 
-        result.maxTestNumber = await labDao.getActiveLabMaxTestNumber()
         if(fs.existsSync(`test/packages/check/${studentId}`) && fs.readdirSync(`test/packages/check/${studentId}`).length !== 0) {
             fileService.clearDirectory(`test/packages/check/${studentId}`)
         }
@@ -299,33 +291,68 @@ exports.checkProgress = async (sid) => {
         
         console.log('Running ideal tests...')
         try {
-            e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
+            //e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
+            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
             console.log('Ideal tests passed')
         } catch (e) {
             console.log('Ideal tests failed')
         }
-        
-        rawReports.testsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
-        
-        console.log('Running student\'s tests...')
-        try {
-            e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/${studentId}/**/*.java" clean test`);
-            console.log('Student\'s tests passed')
-        } catch (e) {
-            console.log('Student\'s tests failed')
-            result.studentTestsPass = false
-        }
-        result.studentTestNumberByRequirement = countTestByRequirement(studentId)
-        if (result.studentTestsPass) {
-            rawReports.coverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
-            result.coverageReport = this.analyzeCoverageReport(rawReports.coverageReport)
-        } else {
-            console.log('Student\'s tests fail, did not generate coverage report')
-        }
-        result.testsReport = this.analyzeTestReport(rawReports.testsReport)
+        const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+        result.testsReport = this.analyzeTestReport(rawTestsReport)
         cleanup(studentId)
         return result
     } catch (e) {
+        console.log('ERROR: ' + e)
+        cleanup(studentId)
+    }
+}
+
+exports.checkCoverage = async (sid) => {
+    var result = {
+        compiles: true,
+        coverageReport: {},
+        studentTestNumberByRequirement: undefined,
+        maxTestNumber: undefined,
+        studentTestsPass: true
+    }
+
+    const studentId = await userDao.getNicknameById(sid)
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
+
+
+    try {
+        const studentLink = await userDao.getActiveLabStudentLink(sid) + '.git'
+        result.maxTestNumber = await labDao.getActiveLabMaxTestNumber()
+        //fileService.clearDirectory(`test/packages/check/${studentId}`)
+        await shellService.cloneRepoInDirectory(studentLink, `/check/${studentId}`)
+        console.log('Checking if source code and tests compile...')
+        const sourceCodeCompiles = await this.checkTestCompile(studentId)
+        if (!sourceCodeCompiles) {
+            result.compiles = false
+            console.log('Student\'s solution does not compile')
+            cleanup(studentId)
+            return result
+        }
+        console.log('Student\'s source code and tests compile')
+        updateIdeal()
+        console.log('Running student\'s tests...')
+        try {
+            //e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/${studentId}/**/*.java" clean test`);
+            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
+            console.log('Student\'s tests passed')
+        } catch (e) {
+            console.log(e)
+            result.studentTestsPass = false
+            console.log('Student\'s tests failed, did not generate coverage report')
+            cleanup(studentId)
+            return result
+        }
+        result.studentTestNumberByRequirement = countTestByRequirement(studentId)
+        const rawCoverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
+        result.coverageReport = this.analyzeCoverageReport(rawCoverageReport)
+        cleanup(studentId)
+        return result
+    } catch(e) {
         console.log('ERROR: ' + e)
         cleanup(studentId)
     }

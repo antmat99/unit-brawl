@@ -21,15 +21,19 @@ function LabMain(props) {
     const [labElement, setLabElement] = useState([])
     const [component, setComponent] = useState(MainComponents.Trace)
     const [dirty, setDirty] = useState(false);
-    const [labProgressState, setLabProgressState] = useState({
+    const [reqsProgressState, setReqsProgressState] = useState({
         loading: false,
         checkDone: false,
         compiles: false,
+        requirements: []
+    })
+    const [coverageProgressState, setcoverageProgressState] = useState({
+        coverageLoading: false,
+        coverageCheckDone: false,
+        studentCompiles: false,
         studentTestNumberByRequirement: 0,
         maxTestNumber: 0,
-        testNumberExceeded: false,
         studentTestsPass: true,
-        requirements: [],
         instructionsCovered: 0,
         instructionsMissed: 0,
         methodsCovered: 0,
@@ -39,15 +43,31 @@ function LabMain(props) {
     })
 
     function handleCheckStarted() {
-        setLabProgressState({
+        setReqsProgressState({
             loading: true,
             checkDone: false,
             compiles: false,
+            requirements: []
+        })
+    }
+
+    function handleCheckDone(data) {
+        setReqsProgressState({
+            loading: false,
+            checkDone: true,
+            compiles: data.compiles,
+            requirements: data.requirements,
+        })
+    }
+
+    function handleCoverageCheckStarted() {
+        setcoverageProgressState({
+            coverageLoading: true,
+            coverageCheckDone: false,
+            studentCompiles: false,
             studentTestNumberByRequirement: 0,
             maxTestNumber: 0,
-            testNumberExceeded: false,
             studentTestsPass: true,
-            requirements: [],
             instructionsCovered: 0,
             instructionsMissed: 0,
             methodsCovered: 0,
@@ -57,16 +77,14 @@ function LabMain(props) {
         })
     }
 
-    function handleCheckDone(data) {
-        setLabProgressState({
-            loading: false,
-            checkDone: true,
-            compiles: data.compiles,
+    function handleCoverageCheckDone(data) {
+        setcoverageProgressState({
+            coverageLoading: false,
+            coverageCheckDone: true,
+            studentCompiles: data.studentCompiles,
             studentTestNumberByRequirement: data.studentTestNumberByRequirement,
             maxTestNumber: data.maxTestNumber,
-            testNumberExceeded: data.testNumberExceeded,
             studentTestsPass: data.studentTestsPass,
-            requirements: data.requirements,
             instructionsCovered: data.instructionsCovered,
             instructionsMissed: data.instructionsMissed,
             methodsCovered: data.methodsCovered,
@@ -209,9 +227,12 @@ function LabMain(props) {
                         {component === MainComponents.Progress &&
                             <MainComponentProgress
                                 lab={lab}
-                                labProgressState={labProgressState}
+                                reqsProgressState={reqsProgressState}
+                                coverageProgressState={coverageProgressState}
                                 handleCheckStarted={handleCheckStarted}
                                 handleCheckDone={handleCheckDone}
+                                handleCoverageCheckStarted={handleCoverageCheckStarted}
+                                handleCoverageCheckDone={handleCoverageCheckDone}
                             />
                         }
                     </Col>
@@ -268,11 +289,12 @@ function MainComponentProgress(props) {
     return (
         <LabProgress
             lab={props.lab}
-            labProgressState={props.labProgressState}
+            reqsProgressState={props.reqsProgressState}
+            coverageProgressState={props.coverageProgressState}
             handleCheckStarted={props.handleCheckStarted}
             handleCheckDone={props.handleCheckDone}
-            studentRepoLink={props.studentRepoLink}
-            solutionRepoLink={props.solutionRepoLink}
+            handleCoverageCheckStarted={props.handleCoverageCheckStarted}
+            handleCoverageCheckDone={props.handleCoverageCheckDone}
         />
     )
 }

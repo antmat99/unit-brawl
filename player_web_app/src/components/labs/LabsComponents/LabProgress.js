@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, Col, ProgressBar, Row, Spinner, Table, OverlayTrigger, Tooltip, Alert, Card, Popover } from 'react-bootstrap';
+import { Button, Col, ProgressBar, Row, Spinner, Table, OverlayTrigger, Tooltip, Container, Card, Popover } from 'react-bootstrap';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css';
 
@@ -8,12 +8,14 @@ import API from '../../../API'
 function LabProgress(props) {
 
     const [loading, setLoading] = useState(false)
+    const [coverageLoading, setCoverageLoading] = useState(false)
     const [checkDone, setCheckDone] = useState(false)
+    const [coverageCheckDone, setCoverageCheckDone] = useState(false)
     const [compiles, setCompiles] = useState(false)
+    const [studentCompiles, setStudentCompiles] = useState(false)
     const [studentTestNumberByRequirement, setStudentTestNumberByRequirement] = useState(false)
     const [maxTestNumber, setMaxTestNumber] = useState(false)
-    const [testNumberExceeded, setTestNumberExceeded] = useState(false)
-    const [studentTestsPass, setStudentTestsPass] = useState()
+    const [studentTestsPass, setStudentTestsPass] = useState(true)
     const [requirements, setRequirements] = useState()
     const [instructionsCovered, setInstructionsCovered] = useState()
     const [instructionsMissed, setInstructionsMissed] = useState()
@@ -23,21 +25,32 @@ function LabProgress(props) {
     const [classesMissed, setClassesMissed] = useState()
 
     useEffect(() => {
-        setLoading(props.labProgressState.loading)
-        setCheckDone(props.labProgressState.checkDone)
-        setCompiles(props.labProgressState.compiles)
-        setStudentTestNumberByRequirement(props.labProgressState.studentTestNumberByRequirement)
-        setMaxTestNumber(props.labProgressState.maxTestNumber)
-        setTestNumberExceeded(props.labProgressState.testNumberExceeded)
-        setStudentTestsPass(props.labProgressState.studentTestsPass)
-        setRequirements(props.labProgressState.requirements)
-        setInstructionsCovered(props.labProgressState.instructionsCovered)
-        setInstructionsMissed(props.labProgressState.instructionsMissed)
-        setMethodsCovered(props.labProgressState.methodsCovered)
-        setMethodsMissed(props.labProgressState.methodsMissed)
-        setClassesCovered(props.labProgressState.classesCovered)
-        setClassesMissed(props.labProgressState.classesMissed)
-    }, [props.labProgressState])
+        /* reqProgressState */
+        setLoading(props.reqsProgressState.loading)
+        setCheckDone(props.reqsProgressState.checkDone)
+        setCompiles(props.reqsProgressState.compiles)
+        setRequirements(props.reqsProgressState.requirements)
+
+        /* coverageProgressState */
+        setCoverageLoading(props.coverageProgressState.coverageLoading)
+        setCoverageCheckDone(props.coverageProgressState.coverageCheckDone)
+        setStudentCompiles(props.coverageProgressState.studentCompiles)
+        setStudentTestNumberByRequirement(props.coverageProgressState.studentTestNumberByRequirement)
+        setMaxTestNumber(props.coverageProgressState.maxTestNumber)
+        setStudentTestsPass(props.coverageProgressState.studentTestsPass)
+        setInstructionsCovered(props.coverageProgressState.instructionsCovered)
+        setInstructionsMissed(props.coverageProgressState.instructionsMissed)
+        setMethodsCovered(props.coverageProgressState.methodsCovered)
+        setMethodsMissed(props.coverageProgressState.methodsMissed)
+        setClassesCovered(props.coverageProgressState.classesCovered)
+        setClassesMissed(props.coverageProgressState.classesMissed)
+    }, [props.reqsProgressState, props.coverageProgressState])
+
+    const tryAgainTests = async () => {
+        setCheckDone(false)
+        setCoverageCheckDone(false)
+        checkProgress()
+    }
 
     const checkProgress = async () => {
         setLoading(true)
@@ -45,10 +58,6 @@ function LabProgress(props) {
         const reports = await API.checkProgress(props.studentRepoLink, props.solutionRepoLink)
         setCompiles(reports.compiles)
         if (reports.compiles) {
-            setStudentTestNumberByRequirement(reports.studentTestNumberByRequirement)
-            setMaxTestNumber(reports.maxTestNumber)
-            setTestNumberExceeded(reports.testNumberExceeded)
-            setStudentTestsPass(reports.studentTestsPass)
             const testsReport = reports.testsReport
             /* If needed, reports.testsReport contains
                 - totalTests
@@ -57,14 +66,11 @@ function LabProgress(props) {
                 - skipped
             */
 
-            const coverageReport = reports.coverageReport
             const requirements = Object.keys(testsReport.testCases).map((key) => {
                 const classname = key.replace('it.polito.po.test.Test', '').substring(0, 2)
-                const testNumber = reports.studentTestNumberByRequirement[classname]
                 var failed = false
                 return {
                     'classname': classname,
-                    'testNumber': testNumber,
                     'tests': testsReport.testCases[key].reduce((acc, cur) => {
                         const tcObj = {
                             'testname': cur.name,
@@ -91,35 +97,12 @@ function LabProgress(props) {
                 }
             })
 
-            const instructionsCovered = (coverageReport !== null) ? coverageReport.instructionsCovered : undefined
-            const instructionsMissed = (coverageReport !== null) ? coverageReport.instructionsMissed : undefined
-            const methodsCovered = (coverageReport !== null) ? coverageReport.methodsCovered : undefined
-            const methodsMissed = (coverageReport !== null) ? coverageReport.methodsMissed : undefined
-            const classesCovered = (coverageReport !== null) ? coverageReport.classesCovered : undefined
-            const classesMissed = (coverageReport !== null) ? coverageReport.classesMissed : undefined
-
             const reportContent = {
                 compiles: reports.compiles,
-                studentTestNumberByRequirement: reports.studentTestNumberByRequirement,
-                maxTestNumber: reports.maxTestNumber,
-                testNumberExceeded: reports.testNumberExceeded,
-                studentTestsPass: reports.studentTestsPass,
-                requirements: requirements,
-                instructionsCovered: instructionsCovered,
-                instructionsMissed: instructionsMissed,
-                methodsCovered: methodsCovered,
-                methodsMissed: methodsMissed,
-                classesCovered: classesCovered,
-                classesMissed: classesMissed
+                requirements: requirements
             }
             props.handleCheckDone(reportContent)
             setRequirements(requirements)
-            setInstructionsCovered(instructionsCovered)
-            setInstructionsMissed(instructionsMissed)
-            setMethodsCovered(methodsCovered)
-            setMethodsMissed(methodsMissed)
-            setClassesCovered(classesCovered)
-            setClassesMissed(classesMissed)
         } else {
             const reportContent = {
                 compiles: reports.compiles
@@ -131,6 +114,160 @@ function LabProgress(props) {
         setLoading(false)
     }
 
+    const checkCoverage = async () => {
+        setCoverageLoading(true)
+        props.handleCoverageCheckStarted()
+        const result = await API.checkCoverage()
+        setStudentCompiles(result.compiles)
+        if (result.compiles) {
+            const coverageReport = result.coverageReport
+            setStudentTestNumberByRequirement(result.studentTestNumberByRequirement)
+            setMaxTestNumber(result.maxTestNumber)
+            setStudentTestsPass(result.studentTestsPass)
+            const instructionsCovered = coverageReport.instructionsCovered
+            const instructionsMissed = coverageReport.instructionsMissed
+            const methodsCovered = coverageReport.methodsCovered
+            const methodsMissed = coverageReport.methodsMissed
+            const classesCovered = coverageReport.classesCovered
+            const classesMissed = coverageReport.classesMissed
+            const reportContent = {
+                studentCompiles: result.compiles,
+                studentTestNumberByRequirement: result.studentTestNumberByRequirement,
+                maxTestNumber: result.maxTestNumber,
+                studentTestsPass: result.studentTestsPass,
+                instructionsCovered: instructionsCovered,
+                instructionsMissed: instructionsMissed,
+                methodsCovered: methodsCovered,
+                methodsMissed: methodsMissed,
+                classesCovered: classesCovered,
+                classesMissed: classesMissed
+            }
+            props.handleCoverageCheckDone(reportContent)
+            setInstructionsCovered(instructionsCovered)
+            setInstructionsMissed(instructionsMissed)
+            setMethodsCovered(methodsCovered)
+            setMethodsMissed(methodsMissed)
+            setClassesCovered(classesCovered)
+            setClassesMissed(classesMissed)
+        } else {
+            const reportContent = {
+                studentCompiles: result.compiles
+            }
+            props.handleCoverageCheckDone(reportContent)
+        }
+        setCoverageCheckDone(true)
+        setCoverageLoading(false)
+    }
+
+    if (!checkDone && !loading) {
+        return <>
+            <Row>
+                <h4>Would you like to check your progress in the lab?</h4>
+            </Row>
+            <Row>
+                <Col>
+                    <Button
+                        onClick={checkProgress}
+                    >
+                        Check progress
+                    </Button>
+                </Col>
+            </Row>
+        </>
+    }
+
+    if (!checkDone && loading) {
+        return <>
+            <Spinner animation="border" role="status">
+            </Spinner>
+            <h4>Please wait while we check your progress...</h4>
+            <h5>This may take a few minutes, do not refresh the page</h5>
+        </>
+    }
+
+    if (checkDone && !loading) {
+        if (!compiles) {
+            return <>
+                <CompiledFailedCard checkProgress={checkProgress} />
+            </>
+        }
+    }
+
+    return (
+        <div>
+            <Row>
+                <Col>
+                    <h3 style={{ marginBottom: '20px' }}>Tests report summary</h3>
+                    <TestsProgressBars requirements={requirements} />
+                    <ReqReportTable
+                        requirements={requirements}
+                        studentTestNumberByRequirement={studentTestNumberByRequirement}
+                        maxTestNumber={maxTestNumber}
+                    />
+                </Col>
+                <Col>
+                    {
+                        coverageCheckDone && !coverageLoading && (
+                            studentCompiles ? (
+                                <CoverageDashboard
+                                    studentTestNumberByRequirement={studentTestNumberByRequirement}
+                                    maxTestNumber={maxTestNumber}
+                                    instrCovered={instructionsCovered}
+                                    instrMissed={instructionsMissed}
+                                    methodsCovered={methodsCovered}
+                                    methodsMissed={methodsMissed}
+                                    classesCovered={classesCovered}
+                                    classesMissed={classesMissed}
+                                />
+                            ) : (
+                                <>
+                                    <h5>Coverage report was not generated</h5>
+                                    <h6>This is normal if you have not provided any test yet. If you have, check if any of them fails,
+                                        and make sure to place the test classes in <code>test/sXXXXXX/</code>, where <code>sXXXXXX</code> is
+                                        your student ID. For example, if you have created two classes, <code>TestClassA.java</code> and <code>TestClassB.java</code>
+                                        , their location should be <code>test/sXXXXXX/TestClassA.java</code> and <code>test/sXXXXXX/TestClassB.java</code></h6>
+                                    <Row>
+                                        <Col className="d-flex justify-content-center">
+                                            <div className="text-center">
+                                                <Button onClick={checkCoverage}>Try again</Button>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                </>
+                            )
+                        )
+                    }
+                    {
+                        !coverageCheckDone && !coverageLoading && (
+                            <>
+                                <Row>
+                                    <h4>Would you like to check the coverage for your tests?</h4>
+                                </Row>
+                                <Row>
+                                    <Col className="d-flex justify-content-center">
+                                        <div className="text-center">
+                                            <Button onClick={checkCoverage}>Check coverage</Button>
+                                        </div>
+                                    </Col>
+                                </Row>
+                            </>
+                        )
+                    }
+                    {
+                        coverageLoading && !coverageCheckDone && (
+                            <>
+                                <Spinner animation="border" role="status">
+                                </Spinner>
+                                <h4>Please wait while we check your coverage...</h4>
+                                <h5>This may take a few minutes, do not refresh the page</h5>
+                            </>
+                        )
+                    }
+                </Col>
+            </Row></div>
+    )
+
+    /*
     if (checkDone && !loading) {
         if (compiles) {
             return <>
@@ -147,22 +284,27 @@ function LabProgress(props) {
                     <Col>
                         <h3 style={{ marginBottom: '20px' }}>Coverage report summary</h3>
                         {
-                            studentTestsPass ?
-                                <CoverageDashboard
-                                    instrCovered={instructionsCovered}
-                                    instrMissed={instructionsMissed}
-                                    methodsCovered={methodsCovered}
-                                    methodsMissed={methodsMissed}
-                                    classesCovered={classesCovered}
-                                    classesMissed={classesMissed}
-                                /> :
-                                <>
-                                    <h5>Coverage report was not generated</h5>
-                                    <h6>This is normal if you have not provided any test yet. If you have, check if any of them fails,
-                                        and make sure to place the test classes in <code>test/sXXXXXX/</code>, where <code>sXXXXXX</code> is
-                                        your student ID. For example, if you have created two classes, <code>TestClassA.java</code> and <code>TestClassB.java</code>
-                                        , their location should be <code>test/sXXXXXX/TestClassA.java</code> and <code>test/sXXXXXX/TestClassB.java</code></h6>
-                                </>
+                            (coverageCheckDone && !coverageLoading) ?
+                                {
+                                   {
+                            compiles && <CoverageDashboard
+                                instrCovered={instructionsCovered}
+                                instrMissed={instructionsMissed}
+                                methodsCovered={methodsCovered}
+                                methodsMissed={methodsMissed}
+                                classesCovered={classesCovered}
+                                classesMissed={classesMissed}
+                            />
+                        } 
+                                }
+                        :
+                        <>
+                            <h5>Coverage report was not generated</h5>
+                            <h6>This is normal if you have not provided any test yet. If you have, check if any of them fails,
+                                and make sure to place the test classes in <code>test/sXXXXXX/</code>, where <code>sXXXXXX</code> is
+                                your student ID. For example, if you have created two classes, <code>TestClassA.java</code> and <code>TestClassB.java</code>
+                                , their location should be <code>test/sXXXXXX/TestClassA.java</code> and <code>test/sXXXXXX/TestClassB.java</code></h6>
+                        </>
 
                         }
                     </Col>
@@ -201,6 +343,7 @@ function LabProgress(props) {
             <h5>This may take a few minutes, do not refresh the page</h5>
         </>
     }
+    */
 }
 
 function TestsProgressBars(props) {
@@ -231,7 +374,7 @@ function ReqReportTable(props) {
                 </tr>
             </thead>
             <tbody>
-                {props.requirements.map((r) => (<ReqReportRow req={r} maxTestNumber={props.maxTestNumber}/>))}
+                {props.requirements.map((r) => (<ReqReportRow req={r} maxTestNumber={props.maxTestNumber} />))}
             </tbody>
         </Table>
     </>
@@ -243,10 +386,10 @@ function ReqReportRow(props) {
     if (props.req.failed) {
         status = 'Failed'
         color = '#fa3939'
-    } else if (props.req.testNumber > props.maxTestNumber) {
+    } /* else if (props.req.testNumber > props.maxTestNumber) {
         status = 'Exceeded test limit'
         color = '#fab039'
-    } else {
+    } */ else {
         status = 'Passed'
         color = '#6afa39'
     }
@@ -254,8 +397,8 @@ function ReqReportRow(props) {
         <td>{props.req.classname.replace('it.polito.po.test.Test', '')}</td>
         <td style={{ backgroundColor: color }}>{status}</td>
         <td>
-            {status === 'Failed' && <ReqCommentElement tests={props.req.tests} exceeded={props.req.testNumber > props.maxTestNumber} />}
-            {status === 'Exceeded test limit' && <ExceededLimitElement limit={props.maxTestNumber} number={props.req.testNumber}/>}
+            {status === 'Failed' && <ReqCommentElement tests={props.req.tests} />}
+            {status === 'Exceeded test limit' && <ExceededLimitElement limit={props.maxTestNumber} number={props.req.testNumber} />}
             {status === 'Passed' && <div>All the requested methods pass their tests!</div>}
         </td>
     </tr>
@@ -335,82 +478,98 @@ function colorPicker(value) {
 }
 
 function CoverageDashboard(props) {
+    const filterRequirements = (obj, threshold) => {
+        const result = {};
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key) && obj[key] > threshold) {
+                result[key] = obj[key];
+            }
+        }
+        return result;
+    }
     const totalInstructions = Number(props.instrCovered) + Number(props.instrMissed)
     const totalMethods = Number(props.methodsCovered) + Number(props.methodsMissed)
     const totalClasses = Number(props.classesCovered) + Number(props.classesMissed)
     const instrCoveredPercentage = Math.round((props.instrCovered / totalInstructions * 100))
     const methodsCoveredPercentage = Math.round((props.methodsCovered / totalMethods * 100))
     const classesCoveredPercentage = Math.round((props.classesCovered / totalClasses * 100))
+    const exceededReqs = filterRequirements(props.studentTestNumberByRequirement, props.maxTestNumber)
+    const exceeded = Object.keys(exceededReqs).length > 0
 
     return (
-        <Row>
-            <Col>
-                <OverlayTrigger
-                    placement='right'
-                    delay={{ show: 250, hide: 400 }}
-                    overlay={<Tooltip id="button-tooltip">
-                        Instructions covered: {props.instrCovered} Instructions missed: {props.instrMissed}
-                    </Tooltip>}
-                    trigger='click'
-                >
-                    <div style={{ width: 150, height: 150 }}>
-                        <CircularProgressbar
-                            value={instrCoveredPercentage}
-                            text={`${instrCoveredPercentage}%`}
-                            strokeWidth={5}
-                            styles={buildStyles({
-                                pathColor: colorPicker(instrCoveredPercentage)
-                            })}
-                        />
-                    </div>
-                </OverlayTrigger>
-                <h5>Instructions</h5>
-            </Col>
-            <Col>
-                <OverlayTrigger
-                    placement='right'
-                    delay={{ show: 250, hide: 400 }}
-                    overlay={<Tooltip id="button-tooltip">
-                        Methods covered: {props.methodsCovered} Methods missed: {props.methodsMissed}
-                    </Tooltip>}
-                    trigger='click'
-                >
-                    <div style={{ width: 150, height: 150 }}>
-                        <CircularProgressbar
-                            value={methodsCoveredPercentage}
-                            text={`${methodsCoveredPercentage}%`}
-                            strokeWidth={5}
-                            styles={buildStyles({
-                                pathColor: colorPicker(methodsCoveredPercentage)
-                            })}
-                        />
-                    </div>
-                </OverlayTrigger>
-                <h5>Methods</h5>
-            </Col>
-            <Col>
-                <OverlayTrigger
-                    placement='right'
-                    delay={{ show: 250, hide: 400 }}
-                    overlay={<Tooltip id="button-tooltip">
-                        Classes covered: {props.classesCovered} Classes missed: {props.classesMissed}
-                    </Tooltip>}
-                    trigger='click'
-                >
-                    <div style={{ width: 150, height: 150 }}>
-                        <CircularProgressbar
-                            value={classesCoveredPercentage}
-                            text={`${classesCoveredPercentage}%`}
-                            strokeWidth={5}
-                            styles={buildStyles({
-                                pathColor: colorPicker(classesCoveredPercentage)
-                            })}
-                        />
-                    </div>
-                </OverlayTrigger>
-                <h5>Classes</h5>
-            </Col>
-        </Row>
+        <>
+            {
+                exceeded && <TestNumberExceededAlert exceededReqs={exceededReqs} max={props.maxTestNumber}/>
+            }
+            <Row>
+                <Col>
+                    <OverlayTrigger
+                        placement='right'
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={<Tooltip id="button-tooltip">
+                            Instructions covered: {props.instrCovered} Instructions missed: {props.instrMissed}
+                        </Tooltip>}
+                        trigger='click'
+                    >
+                        <div style={{ width: 150, height: 150 }}>
+                            <CircularProgressbar
+                                value={instrCoveredPercentage}
+                                text={`${instrCoveredPercentage}%`}
+                                strokeWidth={5}
+                                styles={buildStyles({
+                                    pathColor: colorPicker(instrCoveredPercentage)
+                                })}
+                            />
+                        </div>
+                    </OverlayTrigger>
+                    <h5>Instructions</h5>
+                </Col>
+                <Col>
+                    <OverlayTrigger
+                        placement='right'
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={<Tooltip id="button-tooltip">
+                            Methods covered: {props.methodsCovered} Methods missed: {props.methodsMissed}
+                        </Tooltip>}
+                        trigger='click'
+                    >
+                        <div style={{ width: 150, height: 150 }}>
+                            <CircularProgressbar
+                                value={methodsCoveredPercentage}
+                                text={`${methodsCoveredPercentage}%`}
+                                strokeWidth={5}
+                                styles={buildStyles({
+                                    pathColor: colorPicker(methodsCoveredPercentage)
+                                })}
+                            />
+                        </div>
+                    </OverlayTrigger>
+                    <h5>Methods</h5>
+                </Col>
+                <Col>
+                    <OverlayTrigger
+                        placement='right'
+                        delay={{ show: 250, hide: 400 }}
+                        overlay={<Tooltip id="button-tooltip">
+                            Classes covered: {props.classesCovered} Classes missed: {props.classesMissed}
+                        </Tooltip>}
+                        trigger='click'
+                    >
+                        <div style={{ width: 150, height: 150 }}>
+                            <CircularProgressbar
+                                value={classesCoveredPercentage}
+                                text={`${classesCoveredPercentage}%`}
+                                strokeWidth={5}
+                                styles={buildStyles({
+                                    pathColor: colorPicker(classesCoveredPercentage)
+                                })}
+                            />
+                        </div>
+                    </OverlayTrigger>
+                    <h5>Classes</h5>
+                </Col>
+            </Row>
+        </>
     )
 }
 
@@ -423,6 +582,33 @@ function CompiledFailedCard(props) {
             </Card.Body>
         </Card>
     );
+}
+
+function TestNumberExceededAlert(props) {
+
+    return (
+        <>
+            <Row>Test number per requirement exceeded - You should have at most {props.max} tests per requirements</Row>
+            <Table striped bordered>
+                <thead>
+                    <tr>
+                        <th>Requirement</th>
+                        <th>Number of tests</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {Object.keys(props.exceededReqs).sort().map((key) => (<ExceededTableRow req={key} tests={props.exceededReqs[key]} />))}
+                </tbody>
+            </Table>
+        </>
+    )
+}
+
+function ExceededTableRow(props) {
+    return <tr>
+        <td>{props.req}</td>
+        <td>{props.tests}</td>
+    </tr>
 }
 
 export default LabProgress
