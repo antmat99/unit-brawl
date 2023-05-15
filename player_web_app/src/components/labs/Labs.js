@@ -134,8 +134,6 @@ function ModalJoinLab(props) {
 
     const handleClose = () => {
         setLink('');
-        setBackendError(false);
-        setBackendErrorMessage('');
         setDirty(true)
         close();
     }
@@ -153,7 +151,7 @@ function ModalJoinLab(props) {
             setBackendError(false);
             setBackendErrorMessage('');
             try {
-                API.joinLab(link)
+                await API.joinLab(link)
                 handleClose()
             } catch (e) {
                 setBackendError(true)
