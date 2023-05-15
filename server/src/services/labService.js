@@ -284,25 +284,15 @@ exports.checkProgress = async (sid) => {
         }
         await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
         console.log('Successfully cloned student\'s solution')
-        console.log('Checking if source code compiles...')
-        const sourceCodeCompiles = await this.checkCompile(studentId)
+        console.log('Checking if source code and tests compile...')
+        const sourceCodeCompiles = await this.checkTestCompile(studentId)
         if (!sourceCodeCompiles) {
             result.compiles = false
             console.log('Student\'s solution does not compile')
             cleanup(studentId)
             return result
         }
-        console.log('Student\'s source code compiles')
-        console.log('Checking if tests compile...')
-        const testsCompile = await this.checkTestCompile(studentId)
-        if (!testsCompile) {
-            result.compiles = false
-            console.log('Student\'s tests do not compile')
-            cleanup(studentId)
-            return result
-        }
-        result.compiles = true
-        console.log('Student\'s tests compile')
+        console.log('Student\'s source code and tests compile')
         updateIdeal()
 
         fileService.copyFolderSync(`${pathUtil.rootIdealsolution}/test/it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
