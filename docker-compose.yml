@@ -1,17 +1,17 @@
 version: '3.8'
 services:
   server:
-    image: unit-brawl-server
+    image: matteofavretto/unit-brawl:server-v1
     volumes:
       - database:/server
     ports:
       - "3001:3001"
   player:
-    image: unit-brawl-player
+    image: matteofavretto/unit-brawl:player-v1
     ports:
       - "3000:3000"
   admin:
-    image: unit-brawl-admin
+    image: matteofavretto/unit-brawl:admin-v1
     ports:
       - "3002:3000"
 volumes:
