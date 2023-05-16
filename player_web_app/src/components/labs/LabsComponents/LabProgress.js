@@ -46,10 +46,15 @@ function LabProgress(props) {
         setClassesMissed(props.coverageProgressState.classesMissed)
     }, [props.reqsProgressState, props.coverageProgressState])
 
-    const tryAgainTests = async () => {
+    const retryTests = async () => {
         setCheckDone(false)
         setCoverageCheckDone(false)
         checkProgress()
+    }
+
+    const retryCoverage = async () => {
+        setCoverageCheckDone(false)
+        checkCoverage()
     }
 
     const checkProgress = async () => {
@@ -120,35 +125,52 @@ function LabProgress(props) {
         const result = await API.checkCoverage()
         setStudentCompiles(result.compiles)
         if (result.compiles) {
-            const coverageReport = result.coverageReport
-            setStudentTestNumberByRequirement(result.studentTestNumberByRequirement)
-            setMaxTestNumber(result.maxTestNumber)
             setStudentTestsPass(result.studentTestsPass)
-            const instructionsCovered = coverageReport.instructionsCovered
-            const instructionsMissed = coverageReport.instructionsMissed
-            const methodsCovered = coverageReport.methodsCovered
-            const methodsMissed = coverageReport.methodsMissed
-            const classesCovered = coverageReport.classesCovered
-            const classesMissed = coverageReport.classesMissed
-            const reportContent = {
-                studentCompiles: result.compiles,
-                studentTestNumberByRequirement: result.studentTestNumberByRequirement,
-                maxTestNumber: result.maxTestNumber,
-                studentTestsPass: result.studentTestsPass,
-                instructionsCovered: instructionsCovered,
-                instructionsMissed: instructionsMissed,
-                methodsCovered: methodsCovered,
-                methodsMissed: methodsMissed,
-                classesCovered: classesCovered,
-                classesMissed: classesMissed
+            if (result.studentTestsPass) {
+                const coverageReport = result.coverageReport
+                setStudentTestNumberByRequirement(result.studentTestNumberByRequirement)
+                setMaxTestNumber(result.maxTestNumber)
+                const instructionsCovered = coverageReport.instructionsCovered
+                const instructionsMissed = coverageReport.instructionsMissed
+                const methodsCovered = coverageReport.methodsCovered
+                const methodsMissed = coverageReport.methodsMissed
+                const classesCovered = coverageReport.classesCovered
+                const classesMissed = coverageReport.classesMissed
+                const reportContent = {
+                    studentCompiles: result.compiles,
+                    studentTestNumberByRequirement: result.studentTestNumberByRequirement,
+                    maxTestNumber: result.maxTestNumber,
+                    studentTestsPass: result.studentTestsPass,
+                    instructionsCovered: instructionsCovered,
+                    instructionsMissed: instructionsMissed,
+                    methodsCovered: methodsCovered,
+                    methodsMissed: methodsMissed,
+                    classesCovered: classesCovered,
+                    classesMissed: classesMissed
+                }
+                props.handleCoverageCheckDone(reportContent)
+                setInstructionsCovered(instructionsCovered)
+                setInstructionsMissed(instructionsMissed)
+                setMethodsCovered(methodsCovered)
+                setMethodsMissed(methodsMissed)
+                setClassesCovered(classesCovered)
+                setClassesMissed(classesMissed)
+            } else {
+                const reportContent = {
+                    studentCompiles: result.compiles,
+                    studentTestPass: result.studentTestPass,
+                    maxTestNumber: result.maxTestNumber,
+                    studentTestsPass: result.studentTestsPass,
+                    instructionsCovered: 0,
+                    instructionsMissed: 0,
+                    methodsCovered: 0,
+                    methodsMissed: 0,
+                    classesCovered: 0,
+                    classesMissed: 0
+                }
+                props.handleCoverageCheckDone(reportContent)
             }
-            props.handleCoverageCheckDone(reportContent)
-            setInstructionsCovered(instructionsCovered)
-            setInstructionsMissed(instructionsMissed)
-            setMethodsCovered(methodsCovered)
-            setMethodsMissed(methodsMissed)
-            setClassesCovered(classesCovered)
-            setClassesMissed(classesMissed)
+
         } else {
             const reportContent = {
                 studentCompiles: result.compiles
@@ -188,7 +210,7 @@ function LabProgress(props) {
     if (checkDone && !loading) {
         if (!compiles) {
             return <>
-                <CompiledFailedCard checkProgress={checkProgress} />
+                <CompiledFailedCard retryTests={retryTests} />
             </>
         }
     }
@@ -204,32 +226,49 @@ function LabProgress(props) {
                         studentTestNumberByRequirement={studentTestNumberByRequirement}
                         maxTestNumber={maxTestNumber}
                     />
+                    <Row>
+                        <Col className="d-flex justify-content-center">
+                            <div className="text-center">
+                                <Button onClick={retryTests}>Update requirements progress</Button>
+                            </div>
+                        </Col>
+                    </Row>
                 </Col>
                 <Col>
                     {
                         coverageCheckDone && !coverageLoading && (
-                            studentCompiles ? (
-                                <CoverageDashboard
-                                    studentTestNumberByRequirement={studentTestNumberByRequirement}
-                                    maxTestNumber={maxTestNumber}
-                                    instrCovered={instructionsCovered}
-                                    instrMissed={instructionsMissed}
-                                    methodsCovered={methodsCovered}
-                                    methodsMissed={methodsMissed}
-                                    classesCovered={classesCovered}
-                                    classesMissed={classesMissed}
-                                />
+                            studentCompiles && studentTestsPass ? (
+                                //<h5>Coverage report here</h5>
+                                <>
+                                    <CoverageDashboard
+                                        studentTestNumberByRequirement={studentTestNumberByRequirement}
+                                        maxTestNumber={maxTestNumber}
+                                        instrCovered={instructionsCovered}
+                                        instrMissed={instructionsMissed}
+                                        methodsCovered={methodsCovered}
+                                        methodsMissed={methodsMissed}
+                                        classesCovered={classesCovered}
+                                        classesMissed={classesMissed}
+                                    />
+                                    <Row>
+                                        <Col className="d-flex justify-content-center">
+                                            <div className="text-center">
+                                                <Button onClick={retryCoverage}>Update coverage</Button>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                </>
                             ) : (
                                 <>
                                     <h5>Coverage report was not generated</h5>
-                                    <h6>This is normal if you have not provided any test yet. If you have, check if any of them fails,
-                                        and make sure to place the test classes in <code>test/sXXXXXX/</code>, where <code>sXXXXXX</code> is
+                                    <h6>This is normal if you have not provided any test yet. If you have, make sure your solution compiles and check if any test fails.
+                                        Your test classes should be placed in <code>test/sXXXXXX/</code>, where <code>sXXXXXX</code> is
                                         your student ID. For example, if you have created two classes, <code>TestClassA.java</code> and <code>TestClassB.java</code>
                                         , their location should be <code>test/sXXXXXX/TestClassA.java</code> and <code>test/sXXXXXX/TestClassB.java</code></h6>
                                     <Row>
                                         <Col className="d-flex justify-content-center">
                                             <div className="text-center">
-                                                <Button onClick={checkCoverage}>Try again</Button>
+                                                <Button onClick={retryCoverage}>Try again</Button>
                                             </div>
                                         </Col>
                                     </Row>
@@ -499,7 +538,7 @@ function CoverageDashboard(props) {
     return (
         <>
             {
-                exceeded && <TestNumberExceededAlert exceededReqs={exceededReqs} max={props.maxTestNumber}/>
+                exceeded && <TestNumberExceededAlert exceededReqs={exceededReqs} max={props.maxTestNumber} />
             }
             <Row>
                 <Col>
@@ -578,7 +617,7 @@ function CompiledFailedCard(props) {
         <Card bg='danger' text='light'>
             <Card.Body>
                 <Card.Title>Your solution does not compile...</Card.Title>
-                <Button variant='light' onClick={props.checkProgress}>Try again</Button>
+                <Button variant='light' onClick={props.retryTests}>Try again</Button>
             </Card.Body>
         </Card>
     );

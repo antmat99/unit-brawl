@@ -341,7 +341,6 @@ exports.checkCoverage = async (sid) => {
             e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
             console.log('Student\'s tests passed')
         } catch (e) {
-            console.log(e)
             result.studentTestsPass = false
             console.log('Student\'s tests failed, did not generate coverage report')
             cleanup(studentId)
