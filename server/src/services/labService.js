@@ -265,8 +265,6 @@ exports.checkProgress = async (sid) => {
 
     
     const studentId = await userDao.getNicknameById(sid)
-    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
-
     try {
         var studentRepoLink = await userDao.getActiveLabStudentLink(sid)
         studentRepoLink = studentRepoLink + '.git'
@@ -291,8 +289,8 @@ exports.checkProgress = async (sid) => {
         
         console.log('Running ideal tests...')
         try {
-            //e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
-            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
+            e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
+            //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
             console.log('Ideal tests passed')
         } catch (e) {
             console.log('Ideal tests failed')
@@ -317,8 +315,6 @@ exports.checkCoverage = async (sid) => {
     }
 
     const studentId = await userDao.getNicknameById(sid)
-    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
-
 
     try {
         const studentLink = await userDao.getActiveLabStudentLink(sid) + '.git'
@@ -337,8 +333,8 @@ exports.checkCoverage = async (sid) => {
         updateIdeal()
         console.log('Running student\'s tests...')
         try {
-            //e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/${studentId}/**/*.java" clean test`);
-            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
+            e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/${studentId}/**/*.java" clean test`);
+            //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
             console.log('Student\'s tests passed')
         } catch (e) {
             result.studentTestsPass = false

@@ -44,10 +44,10 @@ exports.getTestPath = (project_path) => {
 
 exports.mavenCompile = (projectDir) => {
     const startTime = performance.now()
-    const correctProjectDirPath = utilPath.toAbsolutePath(path.normalize(projectDir));
+    //const correctProjectDirPath = utilPath.toAbsolutePath(path.normalize(projectDir));
     try {
-        //e.execSync(`cd ${projectDir} && mvn clean compile`)
-        e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn clean compile`);
+        e.execSync(`cd ${projectDir} && mvn clean compile`)
+        //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn clean compile`);
 
     } catch (e) {
         const endTime = performance.now()
@@ -64,10 +64,10 @@ exports.mavenCompile = (projectDir) => {
 
 exports.mavenTestCompile = (projectDir) => {
     const startTime = performance.now()
-    const correctProjectDirPath = utilPath.toAbsolutePath(path.normalize(projectDir));
+    //const correctProjectDirPath = utilPath.toAbsolutePath(path.normalize(projectDir));
     try {
-        //e.execSync(`cd ${projectDir} && mvn clean test-compile`)
-        e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn clean test-compile`);
+        e.execSync(`cd ${projectDir} && mvn clean test-compile`)
+        //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn clean test-compile`);
 
     } catch (e) {
         const endTime = performance.now()
