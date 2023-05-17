@@ -79,7 +79,7 @@ function ProfileSectionAvatars(props) {
                 {
                     avatarList.length == 0 ?
                         <Alert key='alert' variant='warning'>
-                            You have no avatars yet. Try buying some at the <a href='/brawl/shop'>shop</a>!
+                            You have no avatars yet. Try buying some at the <a href='/shop'>shop</a>!
                         </Alert>
                         :
                         avatarElementList

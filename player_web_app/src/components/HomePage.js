@@ -16,7 +16,7 @@ function HomePage(props) {
                         loggedIn ?
                             ''
                             :
-                            <Button href='/brawl/login'>
+                            <Button href='/login'>
                                 Login
                             </Button>
                     }

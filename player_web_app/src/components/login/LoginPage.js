@@ -96,7 +96,7 @@ function LoginPage(props) {
             </Row>
             <Row className='justify-content-md-center'>
                 <Col lg='auto'>
-                    <a href='/brawl/register'>
+                    <a href='/register'>
                         <h6>Don't have an account? Register</h6>
                     </a>
                 </Col>
