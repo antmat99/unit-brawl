@@ -2,6 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Navbar,Button } from 'react-bootstrap';
 import { Link,NavLink } from 'react-router-dom';
 import './../App.css';
+import { ADMINPREFIX  } from './utils';
 
 function MyNavbar(props) {
     return (
@@ -28,7 +29,7 @@ function MyNavbar(props) {
                 {
                     props.loggedIn ?
                         <Button onClick={() => props.doLogOut()}>Logout</Button> :
-                        <Button href='/login'>Login</Button>
+                        <Button href={ADMINPREFIX + '/login'}>Login</Button>
 
                 }
             </Navbar.Collapse>
