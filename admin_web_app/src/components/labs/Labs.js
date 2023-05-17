@@ -46,9 +46,11 @@ function Labs() {
 
     useEffect(() => {
         const f = async () => {
-            await API.getNumberOfPlayers(selectedLab.id)
+            if(selectedLab){
+                await API.getNumberOfPlayers(selectedLab.id)
                 .then(n => setNumberOfPayers(n))
                 .catch(err => handleError(err))
+            }
         }
         f();
     }, [selectedLab])
