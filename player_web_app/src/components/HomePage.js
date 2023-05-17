@@ -1,4 +1,5 @@
 import { Button, Container, Row, Col } from "react-bootstrap";
+import { PLAYERPREFIX } from "../utils";
 
 function HomePage(props) {
     const { loggedIn } = props
@@ -16,7 +17,7 @@ function HomePage(props) {
                         loggedIn ?
                             ''
                             :
-                            <Button href='/login'>
+                            <Button href={PLAYERPREFIX + '/login'}>
                                 Login
                             </Button>
                     }

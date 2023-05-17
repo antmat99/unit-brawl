@@ -1,6 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Navbar, Button } from 'react-bootstrap';
 import { Link, NavLink } from 'react-router-dom';
+import { PLAYERPREFIX } from '../utils';
 
 function MyNavbar(props) {
 
@@ -34,7 +35,7 @@ function MyNavbar(props) {
                 {
                     props.loggedIn ?
                         <Button onClick={() => props.doLogOut()} className='margin-right'>Logout</Button> :
-                        <Button href='/login' className='margin-right'>Login</Button>
+                        <Button href={PLAYERPREFIX + '/login'} className='margin-right'>Login</Button>
 
                 }
             </Navbar.Collapse>

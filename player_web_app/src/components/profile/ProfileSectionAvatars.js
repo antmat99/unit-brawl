@@ -2,6 +2,7 @@ import '../../App.css';
 import API from '../../API.js';
 import { useState, useEffect } from 'react';
 import { Card, Container, Row, Col, Alert, Button, Modal, Figure } from 'react-bootstrap';
+import { PLAYERPREFIX } from '../../utils';
 
 function ProfileSectionAvatars(props) {
 
@@ -79,7 +80,7 @@ function ProfileSectionAvatars(props) {
                 {
                     avatarList.length == 0 ?
                         <Alert key='alert' variant='warning'>
-                            You have no avatars yet. Try buying some at the <a href='/shop'>shop</a>!
+                            You have no avatars yet. Try buying some at the <a href={PLAYERPREFIX + '/shop'}>shop</a>!
                         </Alert>
                         :
                         avatarElementList

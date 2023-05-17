@@ -2,6 +2,7 @@
   "name": "web_app",
   "version": "0.1.0",
   "private": true,
+  "homepage": "/brawl",
   "dependencies": {
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",

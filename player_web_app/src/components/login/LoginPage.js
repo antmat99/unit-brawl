@@ -1,5 +1,6 @@
 import { Form, Button, Alert, Modal, FloatingLabel, Container, Row, Col } from 'react-bootstrap';
 import { useState } from 'react';
+import { PLAYERPREFIX } from '../../utils'
 
 function LoginPage(props) {
     const { doLogIn } = props;
@@ -96,7 +97,7 @@ function LoginPage(props) {
             </Row>
             <Row className='justify-content-md-center'>
                 <Col lg='auto'>
-                    <a href='/register'>
+                    <a href={PLAYERPREFIX + '/register'}>
                         <h6>Don't have an account? Register</h6>
                     </a>
                 </Col>
