@@ -1,5 +1,6 @@
 {
   "name": "admin_web_app",
+  "homepage": "/brawlAdmin",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

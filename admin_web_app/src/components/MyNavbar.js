@@ -28,7 +28,7 @@ function MyNavbar(props) {
                 {
                     props.loggedIn ?
                         <Button onClick={() => props.doLogOut()}>Logout</Button> :
-                        <Button href='/login'>Login</Button>
+                        <Button href='/brawlAdmin/login'>Login</Button>
 
                 }
             </Navbar.Collapse>

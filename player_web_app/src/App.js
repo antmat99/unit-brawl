@@ -16,7 +16,7 @@ import API from './API';
 function App() {
 
   return (
-    <Router>
+    <Router basename='/brawl'>
       <Main />
     </Router>
   );

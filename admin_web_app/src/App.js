@@ -17,7 +17,7 @@ import LoginPage from './components/login/LoginPage'
 
 function App() {
   return (
-    <Router>
+    <Router basename='/brawlAdmin'>
       <Main />
     </Router>
   );
