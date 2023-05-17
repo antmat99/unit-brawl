@@ -7,11 +7,11 @@ services:
     ports:
       - "3001:3001"
   player:
-    image: matteofavretto/unit-brawl:player-v1
+    image: matteofavretto/unit-brawl:player-v1.1
     ports:
       - "3000:3000"
   admin:
-    image: matteofavretto/unit-brawl:admin-v1
+    image: matteofavretto/unit-brawl:admin-v1.1
     ports:
       - "3002:3000"
 volumes:
