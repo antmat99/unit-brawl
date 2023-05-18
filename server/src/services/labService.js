@@ -245,7 +245,7 @@ exports.stopLabIfExpired = () => {
 exports.getSolutionRepositoryLink = async (labId) => {
     if (labId === undefined) {
         try {
-            labId = await labDao.getActiveLabId()
+            labId = await labDao.getActiveLab()
         } catch (e) {
             throw new Exception(500, e.message)
         }
@@ -262,7 +262,7 @@ exports.checkProgress = async (sid) => {
         compiles: true,
         testsReport: {}
     }
-
+    
     
     const studentId = await userDao.getNicknameById(sid)
     try {
@@ -345,6 +345,8 @@ exports.checkCoverage = async (sid) => {
         result.studentTestNumberByRequirement = countTestByRequirement(studentId)
         const rawCoverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
         result.coverageReport = this.analyzeCoverageReport(rawCoverageReport)
+        const percentage = (Number(result.coverageReport.instructionsCovered) / (Number(result.coverageReport.instructionsCovered) + Number(result.coverageReport.instructionsMissed))) * 100
+        await updatePercentage(sid, percentage)
         cleanup(studentId)
         return result
     } catch(e) {
@@ -491,6 +493,17 @@ function countTestByRequirement(studentId) {
         }
     })
     return result
+}
+
+async function updatePercentage (userId, percentage){
+    const activeLab = await labDao.getActiveLab()
+    try {
+        console.log(`Setting coverage ${percentage}% for student ${userId} in lab ${activeLab[0].id}`)
+        return await userLabDao.updateUserLabCoverage(userId, activeLab[0].id, percentage)
+    } catch(e) {
+        console.log(e)
+        throw new Exception(500, e.message)
+    }
 }
 
 /* Utility */
