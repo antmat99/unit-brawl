@@ -13,6 +13,8 @@ import About from './components/About'
 import { useState, useEffect } from 'react';
 import API from './API';
 
+import { PLAYERPREFIX } from './utils';
+
 function App() {
 
   return (
@@ -35,7 +37,7 @@ function Main() {
       const user = await API.logIn(credentials)
       setLoggedIn(true);
       setUser(user);
-      navigate('/');
+      navigate(PLAYERPREFIX + '/');
     } catch (e) {
       throw e; //catch in LoginPage
     }
@@ -46,14 +48,14 @@ function Main() {
     await API.logOut();
     setLoggedIn(false);
     setUser({});
-    navigate('/');
+    navigate(PLAYERPREFIX + '/');
   }
 
   const doRegister = async (user) => {
     await API.register(user);
     setLoggedIn(false);
     setUser({});
-    navigate('/login');
+    navigate(PLAYERPREFIX + '/login');
   }
 
   // check if user is authenticated
@@ -84,34 +86,34 @@ function Main() {
             {
               loggedIn ?
                 <>
-                  <Route path='/' element={
+                  <Route path={PLAYERPREFIX + '/'} element={
                     <HomePage loggedIn={loggedIn}/>
                   } />
-                  <Route path='/profile' element={
+                  <Route path={PLAYERPREFIX + '/profile'} element={
                     <Profile />
                   } />
-                  <Route path='/shop' element={
+                  <Route path={PLAYERPREFIX + '/shop'} element={
                     <Shop />
                   } />
-                  <Route path='/labs' element={
+                  <Route path={PLAYERPREFIX + '/labs'} element={
                     <Labs />
                   } />
-                  <Route path='/leaderboard' element={
+                  <Route path={PLAYERPREFIX + '/leaderboard'} element={
                     <LeaderboardSection />
                   } />
-                  <Route path='/about' element={
+                  <Route path={PLAYERPREFIX + '/about'} element={
                     <About/>
                   } />
                 </>
                 :
                 <>
-                  <Route path='/' element={
+                  <Route path={PLAYERPREFIX + '/'}element={
                     <HomePage />
                   } />
-                  <Route path='/about' element={
+                  <Route path={PLAYERPREFIX + '/about'} element={
                     <About/>
                   } />
-                  <Route path='/register' element={
+                  <Route path={PLAYERPREFIX + '/register'} element={
                     <RegisterPage doRegister={doRegister}/>
                   } />
                   <Route

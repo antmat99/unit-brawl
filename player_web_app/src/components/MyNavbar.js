@@ -7,7 +7,7 @@ function MyNavbar(props) {
 
     return (
         <Navbar className='navbar color-nav py-1' variant='dark' expand='sm' fixed='top' >
-            <Link to='/' className='navbar-title'>
+            <Link to={PLAYERPREFIX + '/'} className='navbar-title'>
                 <Navbar.Brand>
                     Unit Brawl
                 </Navbar.Brand>
@@ -17,17 +17,17 @@ function MyNavbar(props) {
                     {
                         props.loggedIn ?
                             <>
-                                <NavLink to='/leaderboard' className='navbar-menu-item'>Leaderboard</NavLink>
-                                <NavLink to='/labs' className='navbar-menu-item'>Labs</NavLink>
-                                <NavLink to='/shop' className='navbar-menu-item'>Shop</NavLink>
+                                <NavLink to={PLAYERPREFIX + '/leaderboard'} className='navbar-menu-item'>Leaderboard</NavLink>
+                                <NavLink to={PLAYERPREFIX + '/labs'} className='navbar-menu-item'>Labs</NavLink>
+                                <NavLink to={PLAYERPREFIX + '/shop'} className='navbar-menu-item'>Shop</NavLink>
                             </>
                             :
                             ''
                     }
-                    <NavLink to='/about' className='navbar-menu-item'>About</NavLink>
+                    <NavLink to={PLAYERPREFIX + '/about'} className='navbar-menu-item'>About</NavLink>
                     {
                         props.loggedIn ?
-                            <NavLink to='/profile' className='navbar-menu-item'>Profile</NavLink>
+                            <NavLink to={PLAYERPREFIX + '/profile'} className='navbar-menu-item'>Profile</NavLink>
                             :
                             ''
                     }

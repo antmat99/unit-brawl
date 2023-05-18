@@ -1,1 +1,1 @@
-exports.PLAYERPREFIX = 'brawl/'
+exports.PLAYERPREFIX = '/brawl'

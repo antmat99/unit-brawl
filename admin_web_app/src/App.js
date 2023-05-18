@@ -13,6 +13,8 @@ import { useState,useEffect } from 'react';
 import API from './API';
 import LoginPage from './components/login/LoginPage'
 
+import { ADMINPREFIX } from './components/utils';
+
 
 
 function App() {
@@ -35,7 +37,7 @@ function Main() {
       const user = await API.logIn(credentials)
       setLoggedIn(true);
       setUser(user);
-      navigate('/');
+      navigate(ADMINPREFIX + '/');
     } catch (e) {
       throw e; //catch in LoginPage
     }
@@ -77,25 +79,25 @@ function Main() {
             {
               loggedIn ?
                 <>
-                  <Route path='/' element={
+                  <Route path={ADMINPREFIX + '/'} element={
                     <HomePage />
                   } />
-                  <Route path='/leaderboard' element={
+                  <Route path={ADMINPREFIX + '/leaderboard'} element={
                     <LeaderboardSection />
                   } />
-                  <Route path='/labs' element={
+                  <Route path={ADMINPREFIX + '/labs'} element={
                     <Labs />
                   } />
-                  <Route path='/avatars' element={
+                  <Route path={ADMINPREFIX + '/avatars'} element={
                     <Avatars />
                   } />
-                  <Route path='/reports' element={
+                  <Route path={ADMINPREFIX + '/reports'} element={
                     <Reports />
                   } />
                 </>
                 :
                 <>
-                  <Route path='/' element={
+                  <Route path={ADMINPREFIX + '/'} element={
                     <HomePage />
                   } />
                   <Route
