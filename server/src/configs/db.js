@@ -2,7 +2,7 @@
 
 const sqlite = require('sqlite3');
 
-const dbPath = process.env.DB_PATH ? process.env.DB_PATH : './database.db'
+const dbPath = process.env.DB_PATH ? process.env.DB_PATH : './database/database.db'
 
 const db = new sqlite.Database(dbPath, (err) => {
     if(err) {
