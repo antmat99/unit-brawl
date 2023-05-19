@@ -8,8 +8,8 @@ app.use(express.json());
 var bodyParser = require('body-parser');
 app.use(bodyParser.text());
 
-const port = process.env.PORT || 3001;
-const SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001'
+const port = 3001;
+const SERVER_URL = 'http://localhost:3001'
 
 //middlewares
 const { passport, session, isLoggedIn, isAdmin } = require('./src/middlewares/login')
@@ -24,7 +24,7 @@ app.use(passport.session());
 
 const {cors,morgan} = require('./src/middlewares/middlewares')
 const corsOptions = {
-  origin: ['http://localhost:3000','http://localhost:3002'],
+  origin: ['http://localhost:3000','http://localhost:3002', 'http://localhost'],
   credentials: true,
 };
 app.use(cors(corsOptions));

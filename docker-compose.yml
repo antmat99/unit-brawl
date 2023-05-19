@@ -1,18 +1,24 @@
 version: '3.8'
 services:
   server:
-    image: matteofavretto/unit-brawl:server-v1
+    image: server
     volumes:
-      - database:/server
+      - database:/server/database
     ports:
       - "3001:3001"
   player:
-    image: matteofavretto/unit-brawl:player-v1
+    image: player
     ports:
       - "3000:3000"
   admin:
-    image: matteofavretto/unit-brawl:admin-v1
+    image: admin
     ports:
       - "3002:3000"
+  proxy:
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
 volumes:
   database:

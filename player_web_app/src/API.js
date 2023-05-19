@@ -3,7 +3,7 @@ import Achievement from './models/Achievement'
 import Avatar from './models/Avatar';
 import Lab from './models/Lab';
 
-const URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001'
+const URL = 'http://localhost:3001'
 
 /* Login APIs */
 

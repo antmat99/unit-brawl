@@ -2,8 +2,7 @@ import Result from './models/Result'
 import Avatar from './models/Avatar';
 import Lab from './models/Lab';
 
-//const URL = 'http://localhost:3001';
-const URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:3001'
+const URL = 'http://localhost:3001'
 
 console.log(URL)
 
