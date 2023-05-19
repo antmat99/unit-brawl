@@ -1,17 +1,17 @@
 version: '3.8'
 services:
   server:
-    image: server
+    image: matteofavretto/server:v2-proxy
     volumes:
       - database:/server/database
     ports:
       - "3001:3001"
   player:
-    image: player
+    image: matteofavretto/player:v2-proxy
     ports:
       - "3000:3000"
   admin:
-    image: admin
+    image: matteofavretto/admin:v2-proxy
     ports:
       - "3002:3000"
   proxy:
