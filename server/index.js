@@ -24,7 +24,7 @@ app.use(passport.session());
 
 const {cors,morgan} = require('./src/middlewares/middlewares')
 const corsOptions = {
-  origin: ['http://localhost:3000','http://localhost:3002', 'http://localhost'],
+  origin: ['http://localhost:3000','http://localhost:3002', 'http://localhost', 'http://localhost:8080'],
   credentials: true,
 };
 app.use(cors(corsOptions));
