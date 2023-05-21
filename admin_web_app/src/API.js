@@ -2,7 +2,7 @@ import Result from './models/Result'
 import Avatar from './models/Avatar';
 import Lab from './models/Lab';
 
-const URL = 'http://localhost:3001'
+const URL = '/api'
 
 console.log(URL)
 

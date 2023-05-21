@@ -35,29 +35,29 @@ app.use(morgan('dev'));
 
 
 const hello = require('./src/routes/hello.js');
-app.use('/hello', hello);
+app.use('/api/hello', hello);
 
 
 const avatars = require('./src/routes/avatars.js');
-app.use('/avatars', isLoggedIn, avatars);
+app.use('/api/avatars', isLoggedIn, avatars);
 
 const labs = require('./src/routes/labs.js');
-app.use('/labs', isLoggedIn, labs);
+app.use('/api/labs', isLoggedIn, labs);
 
 const leaderboard = require('./src/routes/leaderboard.js');
-app.use('/leaderboard',isLoggedIn, leaderboard);
+app.use('/api/leaderboard',isLoggedIn, leaderboard);
 
 const users = require('./src/routes/users.js');
-app.use('/users',isLoggedIn, users);
+app.use('/api/users',isLoggedIn, users);
 
 const admin = require('./src/routes/admin.js');
-app.use('/admin',isLoggedIn, isAdmin, admin);
+app.use('/api/admin',isLoggedIn, isAdmin, admin);
 
 const login = require('./src/routes/login.js')
-app.use('/sessions', login);
+app.use('/api/sessions', login);
 
 const gitlab = require('./src/routes/gitlab.js')
-app.use('/gitlab', gitlab);
+app.use('/api/gitlab', gitlab);
 
 
 // Activate the server

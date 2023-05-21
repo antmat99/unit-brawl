@@ -1,24 +1,22 @@
 version: '3.8'
 services:
   server:
-    image: matteofavretto/server:v2-proxy
+    image: server
     volumes:
       - database:/server/database
-    ports:
-      - "3001:3001"
+
   player:
-    image: matteofavretto/player:v2-proxy
-    ports:
-      - "3000:3000"
+    image: player
+
   admin:
-    image: matteofavretto/admin:v2-proxy
-    ports:
-      - "3002:3000"
+    image: admin
+
   proxy:
     image: nginx
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     ports:
       - "8080:8080"
+
 volumes:
   database:
