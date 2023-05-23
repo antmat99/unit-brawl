@@ -52,7 +52,7 @@ function Main() {
   }
 
   // check if user is authenticated
-  useEffect(() => {
+/*   useEffect(() => {
     const checkAuth = async () => {
       try {
         // here there are user info, if already logged in
@@ -64,7 +64,7 @@ function Main() {
       }
     };
     checkAuth();
-  }, []);
+  }, []); */
 
   return (
     <Container fluid>
