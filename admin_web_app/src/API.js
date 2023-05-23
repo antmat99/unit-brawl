@@ -4,8 +4,6 @@ import Lab from './models/Lab';
 
 const URL = '/api'
 
-console.log(URL)
-
 /* Login APIs */
 
 async function logIn(credentials) {
