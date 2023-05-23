@@ -1,15 +1,15 @@
 version: '3.8'
 services:
   server:
-    image: matteofavretto/server:v2-proxy-updated
+    image: matteofavretto/server:v2-fix
     volumes:
       - database:/server/database
 
   player:
-    image: matteofavretto/player:v2-proxy-updated
+    image: matteofavretto/player:v2-fix
 
   admin:
-    image: matteofavretto/admin:v2-proxy-updated
+    image: matteofavretto/admin:v2-fix
 
   proxy:
     image: nginx
