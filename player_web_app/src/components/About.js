@@ -13,9 +13,9 @@ function About() {
 
         <h5>Checking your progress</h5>
         <div>After joining a laboratory, you will be able to check your progress from the "Progress" tab in the lab view. Simply press the "Check progress" and wait until you progress have been evaluated. <strong>Please do not refresh the page or navigate to a different section</strong> (e.g. Leaderboard or Profile) <strong>while the progress is being checked.</strong></div>
-        <div>In order for your progress to be evaluated correctly by the application, please make sure to <strong>place your tests in the</strong> <code>tests/sXXXXXX</code> <strong>package of the project</strong>, where <code>sXXXXXX</code> is your student ID.</div>
+        <div>In order for your progress to be evaluated correctly by the application, please make sure to <strong>place your tests in the</strong> <code>test/sXXXXXX</code> <strong>package of the project</strong>, where <code>sXXXXXX</code> is your student ID.</div>
         <div>When browsing your progress status, you will see a <strong>test report summary</strong> on the left. Here you can check your progress in each laboratory requirement. If one or more methods for a requirement present some issues, you will see them reported here.</div>
-        <div> Once you have added your own tests (and they pass), a <strong>coverage report</strong> will be generated as well. In it you can see the coverage percentage of <strong>instructions</strong>, <strong>methods</strong> and <strong>classes</strong> obtained by your tests. Your goal is to provide high-quality tests, so try to get the highest coverage percentage possible!</div>
+        <div> Once you have added your own tests (and they pass), a <strong>coverage report</strong> can be generated as well. In it you will be able to see the coverage percentage of <strong>instructions</strong>, <strong>methods</strong> and <strong>classes</strong> obtained by your tests. Your goal is to provide high-quality tests, so try to get the highest coverage percentage possible!</div>
     </>
 }
 
