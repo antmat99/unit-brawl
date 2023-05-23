@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, Col, ProgressBar, Row, Spinner, Table, OverlayTrigger, Tooltip, Container, Card, Popover } from 'react-bootstrap';
+import { Button, Col, ProgressBar, Row, Spinner, Table, OverlayTrigger, Tooltip, Alert, Card, Popover } from 'react-bootstrap';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css';
 
@@ -241,7 +241,7 @@ function LabProgress(props) {
                                 //<h5>Coverage report here</h5>
                                 <>
                                     <CoverageDashboard
-                                        studentTestNumberByRequirement={studentTestNumberByRequirement}
+                                        totalTests={studentTestNumberByRequirement}
                                         maxTestNumber={maxTestNumber}
                                         instrCovered={instructionsCovered}
                                         instrMissed={instructionsMissed}
@@ -454,13 +454,13 @@ function CoverageDashboard(props) {
     const instrCoveredPercentage = Math.round((props.instrCovered / totalInstructions * 100))
     const methodsCoveredPercentage = Math.round((props.methodsCovered / totalMethods * 100))
     const classesCoveredPercentage = Math.round((props.classesCovered / totalClasses * 100))
-    const exceededReqs = filterRequirements(props.studentTestNumberByRequirement, props.maxTestNumber)
-    const exceeded = Object.keys(exceededReqs).length > 0
+    /* const exceededReqs = filterRequirements(props.studentTestNumberByRequirement, props.maxTestNumber) */
+    const exceeded = props.totalTests > props.maxTestNumber
 
     return (
         <>
             {
-                exceeded && <TestNumberExceededAlert exceededReqs={exceededReqs} max={props.maxTestNumber} />
+                exceeded && <TooManyTestsAlert studentTests={props.totalTests} cap={props.maxTestNumber} />
             }
             <Row>
                 <Col>
@@ -543,6 +543,14 @@ function CompiledFailedCard(props) {
             </Card.Body>
         </Card>
     );
+}
+
+function TooManyTestsAlert(props) {
+    return (
+        <Alert variant='warning'>
+            ATTENTION: you have provided {props.studentTests} tests, while the maximum number of tests allowed is {props.cap}
+        </Alert>
+    )
 }
 
 function TestNumberExceededAlert(props) {

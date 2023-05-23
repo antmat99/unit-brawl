@@ -131,7 +131,7 @@ exports.getActiveLab = async () => {
 exports.updateLab = async (lab) => {
     try {
         //TODO it should be atomic
-        if(isValidGitRepo(lab.linkToIdealSolution)) {
+        if (isValidGitRepo(lab.linkToIdealSolution)) {
             await labDao.updateLab(lab);
             fileService.clearDirectory('test/ideal_solution')
             await shellService.cloneIdealSolution(lab.linkToIdealSolution, 'test/ideal_solution')
@@ -206,7 +206,7 @@ exports.joinLab = async (userId, repositoryLink) => {
         const activeLab = await labDao.getActiveLab();
         if (activeLab.length == 0) throw (new Exception(404, 'No active labs found.'));
         if (activeLab.length > 1) throw (new Exception(500, 'Database error: there should be at most one active lab, but found ' + ret.length + '.'));
-        if(isValidGitRepo(repositoryLink)) {
+        if (isValidGitRepo(repositoryLink)) {
             const ret = await userLabDao.insertUserLab(userId, activeLab[0].id, repositoryLink);
             const uncompletedCoverageAchievements = await achievementDao.getUncompletedCoverageAchievements(userId);
             for (let achievement of uncompletedCoverageAchievements) {
@@ -215,7 +215,7 @@ exports.joinLab = async (userId, repositoryLink) => {
             return ret;
         } else {
             throw new Exception(500, 'Invalid git repository link')
-        }        
+        }
     } catch (e) {
         if (e.code != 500) throw new Exception(e.code, e.message)
         throw new Exception(500, e.message)
@@ -223,12 +223,12 @@ exports.joinLab = async (userId, repositoryLink) => {
 }
 
 const isValidGitRepo = (repoLink) => {
-  try {
-    e.execSync(`git ls-remote ${repoLink}`);
-    return true;
-  } catch (error) {
-    return false;
-  }
+    try {
+        e.execSync(`git ls-remote ${repoLink}`);
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
 
@@ -262,9 +262,10 @@ exports.checkProgress = async (sid) => {
         compiles: true,
         testsReport: {}
     }
-    
-    
+
+
     const studentId = await userDao.getNicknameById(sid)
+    //const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
     try {
         var studentRepoLink = await userDao.getActiveLabStudentLink(sid)
         studentRepoLink = studentRepoLink + '.git'
@@ -286,7 +287,7 @@ exports.checkProgress = async (sid) => {
         updateIdeal()
 
         fileService.copyFolderSync(`${pathUtil.rootIdealsolution}/test/it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
-        
+
         console.log('Running ideal tests...')
         try {
             e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
@@ -309,12 +310,13 @@ exports.checkCoverage = async (sid) => {
     var result = {
         compiles: true,
         coverageReport: {},
-        studentTestNumberByRequirement: undefined,
+        totalTests: undefined,
         maxTestNumber: undefined,
         studentTestsPass: true
     }
 
     const studentId = await userDao.getNicknameById(sid)
+    //const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
 
     try {
         const studentLink = await userDao.getActiveLabStudentLink(sid) + '.git'
@@ -342,14 +344,16 @@ exports.checkCoverage = async (sid) => {
             cleanup(studentId)
             return result
         }
-        result.studentTestNumberByRequirement = countTestByRequirement(studentId)
+        result.studentTestNumberByRequirement  = countTestByRequirement(studentId)
         const rawCoverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
         result.coverageReport = this.analyzeCoverageReport(rawCoverageReport)
         const percentage = (Number(result.coverageReport.instructionsCovered) / (Number(result.coverageReport.instructionsCovered) + Number(result.coverageReport.instructionsMissed))) * 100
-        await updatePercentage(sid, percentage)
+        if(result.totalTests <= result.maxTestNumber){
+            await updatePercentage(sid, percentage)
+        }
         cleanup(studentId)
         return result
-    } catch(e) {
+    } catch (e) {
         console.log('ERROR: ' + e)
         cleanup(studentId)
     }
@@ -399,7 +403,7 @@ exports.analyzeTestReport = (rep) => {
         Object.keys(tc).forEach(key => {
             if (key !== 'failure' && key !== 'error') {
                 tcObj[key] = tc[key]
-            } else if(key === 'failure') {
+            } else if (key === 'failure') {
                 tcObj['failureMessage'] = tc[key]['message']
                 tcObj['failureType'] = tc[key]['type']
             } else {
@@ -474,10 +478,10 @@ function countTestByRequirement(studentId) {
         const report = parser.parse(rep)
         const testsuite = report['testsuite']
         const testcases = testsuite['testcase']
-        if(testcases.length > 1) {
+        if (testcases.length > 1) {
             testcases.forEach(tc => {
                 const req = `R${Number.parseInt(tc.name[5])}`
-                if(!result.hasOwnProperty(req)){
+                if (!result.hasOwnProperty(req)) {
                     result[req] = 1
                 } else {
                     result[req]++
@@ -485,22 +489,31 @@ function countTestByRequirement(studentId) {
             })
         } else {
             const req = `R${Number.parseInt(testcases.name[5])}`
-                if(!result.hasOwnProperty(req)){
-                    result[req] = 1
-                } else {
-                    result[req]++
-                }
+            if (!result.hasOwnProperty(req)) {
+                result[req] = 1
+            } else {
+                result[req]++
+            }
         }
     })
-    return result
+
+    let totalTests = 0;
+
+    for (const req in result) {
+        if (result.hasOwnProperty(req)) {
+            totalTests += result[req];
+        }
+    }
+    console.log(JSON.stringify(totalTests))
+    return totalTests;
 }
 
-async function updatePercentage (userId, percentage){
+async function updatePercentage(userId, percentage) {
     const activeLab = await labDao.getActiveLab()
     try {
         console.log(`Setting coverage ${percentage}% for student ${userId} in lab ${activeLab[0].id}`)
         return await userLabDao.updateUserLabCoverage(userId, activeLab[0].id, percentage)
-    } catch(e) {
+    } catch (e) {
         console.log(e)
         throw new Exception(500, e.message)
     }
