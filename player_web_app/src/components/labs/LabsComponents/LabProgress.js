@@ -7,8 +7,8 @@ import API from '../../../API'
 
 function LabProgress(props) {
 
-    const [loading, setLoading] = useState(false)
-    const [coverageLoading, setCoverageLoading] = useState(false)
+    const [loading, setLoading] = useState(props.reqsProgressState.loading)
+    const [coverageLoading, setCoverageLoading] = useState(props.reqsProgressState.checkDone)
     const [checkDone, setCheckDone] = useState(false)
     const [coverageCheckDone, setCoverageCheckDone] = useState(false)
     const [compiles, setCompiles] = useState(false)
