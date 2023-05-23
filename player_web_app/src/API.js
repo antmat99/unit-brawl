@@ -3,7 +3,7 @@ import Achievement from './models/Achievement'
 import Avatar from './models/Avatar';
 import Lab from './models/Lab';
 
-const URL = '/api'
+const URL = '/eipiai'
 
 /* Login APIs */
 

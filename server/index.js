@@ -1,6 +1,5 @@
 'use strict';
 
-
 // init express
 const express = require('express');
 const app = express();
@@ -9,7 +8,7 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.text());
 
 const port = 3001;
-const SERVER_URL = 'http://localhost:3001'
+const SERVER_URL = `http://localhost:3001`
 
 //middlewares
 const { passport, session, isLoggedIn, isAdmin } = require('./src/middlewares/login')
@@ -35,29 +34,29 @@ app.use(morgan('dev'));
 
 
 const hello = require('./src/routes/hello.js');
-app.use('/api/hello', hello);
+app.use('/hello', hello);
 
 
 const avatars = require('./src/routes/avatars.js');
-app.use('/api/avatars', isLoggedIn, avatars);
+app.use('/eipiai/avatars', isLoggedIn, avatars);
 
 const labs = require('./src/routes/labs.js');
-app.use('/api/labs', isLoggedIn, labs);
+app.use('/eipiai/labs', isLoggedIn, labs);
 
 const leaderboard = require('./src/routes/leaderboard.js');
-app.use('/api/leaderboard',isLoggedIn, leaderboard);
+app.use('/eipiai/leaderboard',isLoggedIn, leaderboard);
 
 const users = require('./src/routes/users.js');
-app.use('/api/users',isLoggedIn, users);
+app.use('/eipiai/users',isLoggedIn, users);
 
 const admin = require('./src/routes/admin.js');
-app.use('/api/admin',isLoggedIn, isAdmin, admin);
+app.use('/eipiai/admin',isLoggedIn, isAdmin, admin);
 
 const login = require('./src/routes/login.js')
-app.use('/api/sessions', login);
+app.use('/eipiai/sessions', login);
 
 const gitlab = require('./src/routes/gitlab.js')
-app.use('/api/gitlab', gitlab);
+app.use('/eipiai/gitlab', gitlab);
 
 
 // Activate the server
