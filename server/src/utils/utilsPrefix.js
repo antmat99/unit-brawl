@@ -1,0 +1,1 @@
+exports.API_PREFIX = '/eipiai'

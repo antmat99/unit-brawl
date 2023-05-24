@@ -1,0 +1,5 @@
+exports.ping = async (req, res) => {
+    const response = 'Got pinged!'
+    res.setHeader('Content-Type', 'application/json')
+    res.status(200).json(response)
+}
