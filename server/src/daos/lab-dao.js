@@ -403,3 +403,31 @@ exports.getActiveLabMaxTestNumber = () => {
         })
     })
 }
+
+exports.getLabSubmitterId = (labId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT submitterUsername FROM lab_ideal_solution WHERE lab_id = ?'
+        db.get(sql, [labId], (err, row) => {
+            if(err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            } else {
+                resolve(row.submitterUsername)
+            }
+        })
+    })
+}
+
+exports.getLabAccessToken = (labId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT gitLabAccessToken FROM lab_ideal_solution WHERE lab_id = ?'
+        db.get(sql, [labId], (err, row) => {
+            if(err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            } else {
+                resolve(row.gitLabAccessToken)
+            }
+        })
+    })
+}

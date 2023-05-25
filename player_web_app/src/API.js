@@ -303,20 +303,19 @@ async function getUserLabsAttended() {
 }
 
 
-async function joinLab(repositoryLink, username, accessToken) {
+async function joinLab(repositoryLink) {
     const response = await fetch(URL + '/labs/join',
         {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                repositoryLink: repositoryLink,
-                username: username,
-                accessToken: accessToken
+                repositoryLink: repositoryLink
             })
         }
     );
     if (!response.ok) {
+        console.log(response)
         throw await response.json()
     }
 }
@@ -332,16 +331,14 @@ async function getUserLabRegionLeaderboard(labId) {
     }
 }
 
-async function editRepository(labId, link, username, accessToken) {
+async function editRepository(labId, link) {
     const response = await fetch(URL + '/users/labs/repositoryLink?labId=' + labId,
         {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                link: link,
-                username: username,
-                token: accessToken
+                link: link
             })
         }
     );

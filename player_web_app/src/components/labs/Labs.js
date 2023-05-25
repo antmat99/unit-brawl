@@ -4,41 +4,17 @@ import LabMain from "./LabMain";
 import { Container, Row, Col, Modal, Button, Form, Alert } from 'react-bootstrap'
 import API from "../../API";
 
-//TODO: fix all forms
-
 function Labs() {
     const [loading, setLoading] = useState(false)
     const [labs, setLabs] = useState([])
     const [labsAttendedIds, setLabsAttendedIds] = useState([])
     const [selectedLab, setSelectedLab] = useState(undefined)
-    const [gitlabUsername, setGitlabUsername] = useState('')
-    const [accessToken, setAccessToken] = useState('')
     const [showModalJoinLab, setShowModalJoinLab] = useState(false)
     const [showModalEditRepository, setShowModalEditRepository] = useState(false)
     const [dirty, setDirty] = useState(true);
     //partial leaderboard
     const [userLabRegionLeaderboard, setUserLabRegionLeaderboard] = useState([]);
     const [repositoryLink, setRepositoryLink] = useState('')
-
-
-    /*     useEffect(() => {
-            if (dirty) {
-                setLoading(true)
-                API.getLabs()
-                    .then(list => {
-                        setLabs(list);
-                        setSelectedLab(list[list.length - 1])
-                        API.getUserLabsAttended()
-                            .then(list => {
-                                setLabsAttendedIds(list);
-                            })
-                            .catch(err => handleError(err));
-                    })
-                    .catch(err => handleError(err))
-                setDirty(false)
-                setLoading(false)
-            }
-        }, [dirty]) */
 
     useEffect(() => {
         const update = async () => {
@@ -93,21 +69,17 @@ function Labs() {
     }
 
     const openModalEditRepository = () => {
-        API.getUserLabCredentials(selectedLab.id)
-            .then(credentials => {
-                console.log(credentials)
-                setRepositoryLink(credentials.repository)
-                setGitlabUsername(credentials.gitlabUsername)
-                setAccessToken(credentials.accessToken)
+        API.getRepositoryLink(selectedLab.id)
+            .then(link => {
+                console.log(link)
+                setRepositoryLink(link)
                 setShowModalEditRepository(true);
             })
             .catch(err => handleError(err))
     }
 
-    const closeModalEditRepository = (newLink, newUsername, newToken) => {
+    const closeModalEditRepository = (newLink) => {
         if (newLink !== undefined) setRepositoryLink(newLink);
-        if (newUsername !== undefined) setGitlabUsername(newUsername);
-        if (newToken !== undefined) setAccessToken(newToken)
         setShowModalEditRepository(false);
     }
 
@@ -129,8 +101,6 @@ function Labs() {
                         show={showModalEditRepository}
                         close={closeModalEditRepository}
                         actualLink={repositoryLink}
-                        gitlabUsername={gitlabUsername}
-                        token={accessToken}
                     />
                 </Container>
         }
@@ -140,9 +110,6 @@ function Labs() {
 
 function ModalJoinLab(props) {
     const { lab, show, close, setDirty } = props;
-
-    const [username, setUsername] = useState('')
-    const [accessToken, setAccessToken] = useState('')
     const [link, setLink] = useState('');
     const [backendError, setBackendError] = useState(false);
     const [backendErrorMessage, setBackendErrorMessage] = useState('');
@@ -166,7 +133,7 @@ function ModalJoinLab(props) {
             setBackendError(false);
             setBackendErrorMessage('');
             try {
-                await API.joinLab(link, username, accessToken)
+                await API.joinLab(link)
                 handleClose()
             } catch (e) {
                 setBackendError(true)
@@ -195,28 +162,6 @@ function ModalJoinLab(props) {
                 }
                 <Form onSubmit={handleSubmit}>
                     <Row className="mb-3">
-                        <Form.Group md='4' controlId="validationUsername">
-                            <Form.Label>GitLab Username</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder='Enter your GitLab username'
-                                value={username}
-                                onChange={e => setUsername(e.target.value)}
-                                required
-                            />
-                        </Form.Group>
-                        <Form.Group md='4' controlId="validationToken">
-                            <Form.Label>GitLab Access Token</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder='Enter your GitLab access token'
-                                value={accessToken}
-                                onChange={e => setAccessToken(e.target.value)}
-                                required
-                            />
-                        </Form.Group>
-                    </Row>
-                    <Row className="mb-3">
 
                         <Form.Group md='4' controlId="validationRepository">
                             <Form.Label>Link</Form.Label>
@@ -239,39 +184,32 @@ function ModalJoinLab(props) {
 }
 
 function ModalEditRepository(props) {
-    const { lab, show, close, actualLink, gitlabUsername, token } = props;
+    const { lab, show, close, actualLink } = props;
 
     const [link, setLink] = useState(actualLink);
     const [isValidLink, setIsValidLink] = useState(true);
-    const [username, setUsername] = useState(gitlabUsername);
-    const [isValidUsername, setIsValidUsername] = useState(true);
-    const [accessToken, setAccessToken] = useState(token);
-    const [isValidToken, setIsValidToken] = useState(true);
     const [backendError, setBackendError] = useState(false);
     const [backendErrorMessage, setBackendErrorMessage] = useState('');
 
     const handleClose = () => {
         const newLink = link;
-        const newUsername = username
-        const newToken = accessToken
         setBackendError(false);
         setBackendErrorMessage('');
-        close(newLink, newUsername, newToken);
+        close(newLink);
     }
 
     const handleSubmit = async (event) => {
         event.preventDefault()
-        if (isValidLink && isValidUsername && isValidToken) {
+        if (isValidLink) {
             setBackendError(false);
             setBackendErrorMessage('');
             try {
-                console.log(`New values: ${link} - ${username} - ${accessToken}`)
-                await API.editRepository(lab.id, link, username, accessToken);
+                await API.editRepository(lab.id, link);
                 handleClose()
             } catch (errorMessage) {
                 console.log(errorMessage)
                 setBackendError(true)
-                setBackendErrorMessage(`Something went wrong. Are these credentials correct? GitLab username: ${username} - Repository link: ${link} - Access token: ${accessToken}`)
+                setBackendErrorMessage(`Something went wrong. Is the following link correct? ${link}`)
             }
         }
         else { //invalid text in form
@@ -284,18 +222,6 @@ function ModalEditRepository(props) {
         setLink(formLink);
         if (formLink === '') setIsValidLink(false);
         else setIsValidLink(true);
-    }
-
-    const onChangeUsername = (formUsername) => {
-        setUsername(formUsername);
-        if (formUsername === '') setIsValidUsername(false);
-        else setIsValidUsername(true);
-    }
-
-    const onChangeToken = (formToken) => {
-        setAccessToken(formToken);
-        if (formToken === '') setIsValidToken(false);
-        else setIsValidToken(true);
     }
 
     return (
@@ -319,35 +245,6 @@ function ModalEditRepository(props) {
                         ''
                 }
                 <Form onSubmit={handleSubmit}>
-                    <Row className="mb-3">
-
-                        <Form.Group md='4' controlId="validationUsername">
-                            <Form.Label>Insert your GitLab username</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="GitLab username"
-                                defaultValue={gitlabUsername}
-                                onChange={e => onChangeUsername(e.target.value)}
-                                isInvalid={!isValidUsername}
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                Please provide your GitLab username.
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                        <Form.Group md='4' controlId="validationToken">
-                            <Form.Label>Insert your GitLab access token</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Access token"
-                                defaultValue={token}
-                                onChange={e => onChangeToken(e.target.value)}
-                                isInvalid={!isValidToken}
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                Please provide your GitLab access token.
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                    </Row>
                     <Row className="mb-3">
 
                         <Form.Group md='4' controlId="validationRepository">

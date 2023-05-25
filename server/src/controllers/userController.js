@@ -165,7 +165,7 @@ exports.getUserLabCredentials = async (req, res) => {
 
 exports.updateUserLabRepositoryLink = async (req, res) => {
     try {
-        const result = await userService.updateUserLabRepositoryLink(req.user.id, req.query.labId, req.body.link, req.body.username, req.body.token);
+        const result = await userService.updateUserLabRepositoryLink(req.user.id, req.query.labId, req.body.link);
         res.status(200).json(result);
     } catch (e) {
         console.log(e)

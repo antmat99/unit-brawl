@@ -111,10 +111,11 @@ exports.getLabPlayersCount = async (req, res) => {
 
 exports.joinLab = async (req, res) => {
     try {
-        const ret = await labService.joinLab(req.user.id,req.body.repositoryLink,req.body.username,req.body.accessToken);
+        const ret = await labService.joinLab(req.user.id,req.body.repositoryLink);
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json(ret);
     } catch (e) {
+        console.log(e)
         res.status(e.code).end(e.message)
     }
 };

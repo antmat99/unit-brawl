@@ -1,15 +1,15 @@
 version: '3.8'
 services:
   server:
-    image: matteofavretto/server:v3.0-private
+    image: matteofavretto/server:v3-single-token
     volumes:
       - database:/server/database
 
   player:
-    image: matteofavretto/player:v3.0-private
+    image: matteofavretto/player:v3-single-token
 
   admin:
-    image: matteofavretto/admin:v3.0-private
+    image: matteofavretto/admin:v3-single-token
 
   proxy:
     image: nginx

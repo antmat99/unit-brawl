@@ -224,26 +224,14 @@ exports.getUserLabCredentials = async (userId, labId) => {
     }
 }
 
-exports.updateUserLabRepositoryLink = async (userId, labId, link, username, token) => {
+exports.updateUserLabRepositoryLink = async (userId, labId, link) => {
     var l = link
-    var u = username
-    var t = token
-    console.log(t === '')
     try {
         if(l === '') {
             console.log('Link is empty, updating to current')
             l = await userLabDao.getUserLabRepositoryLink(userId, labId)
         }
-        if(u === '') {
-            console.log('Username is empty, updating to current')
-            u = await userLabDao.getGitLabUsername(userId, labId)
-        }
-        if(t === '') {
-            console.log('Token is empty, updating to current')
-            t = await userLabDao.getToken(userId, labId)
-        }
-        console.log(`Link: ${l} - Username: ${u} - Token: ${t}`)
-        return await userLabDao.updateUserLabRepositoryLink(userId, labId, l, u, t);
+        return await userLabDao.updateUserLabRepositoryLink(userId, labId, l);
 
     } catch (e) {
         throw new Exception(500, e.message)
