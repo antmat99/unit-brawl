@@ -297,16 +297,18 @@ exports.checkProgress = async (sid) => {
             //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
 
             console.log('Ideal tests passed')
-            const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
-            result.testsReport = this.analyzeTestReport(rawTestsReport)
+            //const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+            //result.testsReport = this.analyzeTestReport(rawTestsReport)
+            result.testsReport = aggregateTestResults(`test/packages/check/${studentId}/target/surefire-reports/`)
             cleanup(studentId)
             return result
         } catch (e) {
             if (fs.readdirSync(`test/packages/check/${studentId}/target/classes`).length !== 0 && fs.readdirSync(`test/packages/check/${studentId}/target/test-classes`).length !== 0) {
                 /* Compilation succeeded, tests failed */
                 console.log('Ideal tests failed')
-                const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
-                result.testsReport = this.analyzeTestReport(rawTestsReport)
+                //const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+                //result.testsReport = this.analyzeTestReport(rawTestsReport)
+                result.testsReport = aggregateTestResults(`test/packages/check/${studentId}/target/surefire-reports/`)
                 cleanup(studentId)
                 return result
             } else {
@@ -415,6 +417,85 @@ exports.checkTestCompile = async (studentId) => {
         return false
     }
 }
+
+function aggregateTestResults(folderPath) {
+    const fileNames = fs.readdirSync(folderPath); // Get the list of XML files in the folderù
+
+    const options = {
+        ignoreAttributes: false,
+        attributeNamePrefix: "",
+        parseNodeValue: true
+    };
+
+    let aggregatedResults = {
+        totalTests: 0,
+        failures: 0,
+        errors: 0,
+        skipped: 0,
+        testCases: {}
+    };
+
+    const parser = new xml.XMLParser(options);
+
+    fileNames.forEach(fileName => {
+        const filePath = path.join(folderPath, fileName);
+        if (fileName.endsWith(".xml")) {
+            const xmlData = fs.readFileSync(filePath, 'utf8'); // Read the XML file
+
+            // Perform the XML parsing and result extraction as before
+            const report = parser.parse(xmlData);
+
+            const testsuite = report['testsuite'];
+            const totalTests = testsuite['tests'];
+            const failures = testsuite['failures'];
+            const errors = testsuite['errors'];
+            const skipped = testsuite['skipped'];
+            const testcases = testsuite['testcase'];
+
+            const testcasesObj = testcases.map(tc => {
+                const tcObj = {};
+                Object.keys(tc).forEach(key => {
+                    if (key !== 'failure' && key !== 'error') {
+                        tcObj[key] = tc[key];
+                    } else if (key === 'failure') {
+                        tcObj['failureMessage'] = tc[key]['message'];
+                        tcObj['failureType'] = tc[key]['type'];
+                    } else {
+                        tcObj['errorMessage'] = tc[key]['message'];
+                        tcObj['errorType'] = tc[key]['type'];
+                    }
+                });
+                return tcObj;
+            });
+
+            const groupedByClassname = testcasesObj.reduce((acc, tc) => {
+                const key = tc.classname;
+                if (!acc[key]) {
+                    acc[key] = [];
+                }
+                acc[key].push(tc);
+                return acc;
+            }, {});
+
+            // Aggregate the results
+            aggregatedResults.totalTests += Number(totalTests);
+            aggregatedResults.failures += Number(failures);
+            aggregatedResults.errors += Number(errors);
+            aggregatedResults.skipped += Number(skipped);
+
+            Object.keys(groupedByClassname).forEach(classname => {
+                if (!aggregatedResults.testCases[classname]) {
+                    aggregatedResults.testCases[classname] = [];
+                }
+                aggregatedResults.testCases[classname].push(...groupedByClassname[classname]);
+            });
+        }
+
+    });
+
+    return aggregatedResults;
+}
+
 
 exports.analyzeTestReport = (rep) => {
 
