@@ -1,6 +1,6 @@
 import './App.css';
 import { Container, Row, Col } from 'react-bootstrap';
-import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import MyNavbar from './components/MyNavbar';
 import Profile from './components/profile/Profile';
 import HomePage from './components/HomePage';
@@ -10,7 +10,7 @@ import LeaderboardSection from './components/leaderboard/LeaderboardSection';
 import LoginPage from './components/login/LoginPage';
 import RegisterPage from './components/login/RegisterPage';
 import About from './components/About'
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import API from './API';
 
 import { PLAYERPREFIX } from './utils';

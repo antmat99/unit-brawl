@@ -1,8 +1,9 @@
 import Result from './models/Result'
-import Achievement from './models/Achievement'
+//import Achievement from './models/Achievement'
 import Avatar from './models/Avatar';
 import Lab from './models/Lab';
 
+//const URL = 'http://localhost:3001/eipiai'
 const URL = '/eipiai'
 
 /* Login APIs */
@@ -302,14 +303,16 @@ async function getUserLabsAttended() {
 }
 
 
-async function joinLab(repositoryLink) {
+async function joinLab(repositoryLink, username, accessToken) {
     const response = await fetch(URL + '/labs/join',
         {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                repositoryLink: repositoryLink
+                repositoryLink: repositoryLink,
+                username: username,
+                accessToken: accessToken
             })
         }
     );
@@ -329,19 +332,31 @@ async function getUserLabRegionLeaderboard(labId) {
     }
 }
 
-async function editRepository(labId, link) {
+async function editRepository(labId, link, username, accessToken) {
     const response = await fetch(URL + '/users/labs/repositoryLink?labId=' + labId,
         {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                link: link
+                link: link,
+                username: username,
+                token: accessToken
             })
         }
     );
     if (!response.ok) {
         throw await response.json()
+    }
+}
+
+async function getUserLabCredentials(labId) {
+    const response = await fetch(URL + '/users/labs/credentials?labId=' + labId, { credentials: 'include' });
+    const credentials = await response.json();
+    if (response.ok) {
+        return credentials;
+    } else {
+        throw await response.json();  // an object with the error coming from the server
     }
 }
 
@@ -460,7 +475,7 @@ async function checkCoverage() {
 }
 
 async function test() {
-    const response = await fetch(URL + '/labs/progress/test', { credentials: 'include' })
+    const response = await fetch(URL + '/test', { credentials: 'include' })
     const progress = await response.json()
     if (response.ok) {
         return progress
@@ -484,6 +499,7 @@ const API = {
     getUserAchievements,
     getUserAchievementsFake,
     getUserMoney,
+    getUserLabCredentials,
     getUserUnlockedAchievementsCount,
     getAvailableAvatars,
     buyAvatars,

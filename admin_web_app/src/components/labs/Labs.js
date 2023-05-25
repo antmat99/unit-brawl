@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import LabList from "./LabList";
 import LabMain from "./LabMain";
-import { Container, Row, Col, Alert, Modal, Button, Form, InputGroup } from 'react-bootstrap'
+import { Container, Row, Col, Alert, Modal, Button, Form } from 'react-bootstrap'
 import { Button as FloatingActionButton, Container as FABContainer } from 'react-floating-action-button';
 import API from "../../API";
 import Lab from "../../models/Lab";
@@ -151,6 +151,8 @@ function ModalStartEditLab(props) {
     const [date, setDate] = useState('');
     const [testMaxNumber, setTestMaxNumber] = useState('');
     const [linkToIdealSolution, setLinkToIdealSolution] = useState('');
+    const [gitLabUsername, setGitLabUsername] = useState('')
+    const [accessToken, setAccessToken] = useState('')
     const [backendError, setBackendError] = useState(false);
     const [backendErrorMessage, setBackendErrorMessage] = useState('');
 
@@ -172,7 +174,7 @@ function ModalStartEditLab(props) {
             try {
                 if (edit) { //edit lab
                     try {
-                        await API.updateLab(new Lab(labToEdit.id, name, date, trace, false, labToEdit.leaderboard, testMaxNumber, linkToIdealSolution))
+                        await API.updateLab(new Lab(labToEdit.id, name, date, trace, false, labToEdit.leaderboard, testMaxNumber, linkToIdealSolution), gitLabUsername, accessToken)
                         handleClose()
                     } catch(e) {
                         setBackendError(true)
@@ -182,7 +184,7 @@ function ModalStartEditLab(props) {
                 else { //start lab
                     //set fake id as 0, backend will overwrite it
                     try {
-                        await API.createAndStartLab(new Lab(0, name, date, trace, false, null, testMaxNumber, linkToIdealSolution))
+                        await API.createAndStartLab(new Lab(0, name, date, trace, false, null, testMaxNumber, linkToIdealSolution), gitLabUsername, accessToken)
                         handleClose()
                     } catch(e) {
                         setBackendError(true)
@@ -271,6 +273,29 @@ function ModalStartEditLab(props) {
                 }
                 <Form onSubmit={handleSubmit}>
                     <Row className="mb-3">
+                    <Form.Group as={Col} md="3" controlId="validationGitlabUsername">
+                            <Form.Label>GitLab Username</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Insert GitLab username"
+                                defaultValue={''}
+                                onChange={e => setGitLabUsername(e.target.value)}
+                            />
+                            <Form.Text>{'> 0'}</Form.Text>
+                        </Form.Group>
+                        <Form.Group as={Col} md="3" controlId="validationAccessToken">
+                            <Form.Label>GitLab Access Token</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Insert GitLab Access Token"
+                                defaultValue={''}
+                                onChange={e => setAccessToken(e.target.value)}
+                            />
+                            <Form.Text>{'> 0'}</Form.Text>
+                            <Form.Control.Feedback type="invalid">
+                                Please provide a max number of tests {'( > 0 )'}.
+                            </Form.Control.Feedback>
+                        </Form.Group>
                         <Form.Group as={Col} md="4" controlId="validationName">
                             <Form.Label>Name</Form.Label>
                             <Form.Control

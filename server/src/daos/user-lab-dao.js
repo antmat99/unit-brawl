@@ -140,13 +140,13 @@ exports.getUserBestPosition = (userId) => {
 }
 
 
-exports.insertUserLab = (userId, labId, repositoryLink) => {
+exports.insertUserLab = (userId, labId, repositoryLink,username,accessToken) => {
     return new Promise((resolve, reject) => {
         const sql = `
-            INSERT INTO user_lab(user_id,lab_id,points,position,repository,coverage_percentage,tests_failed_on_enemy,tests_enemy_passed)
-            VALUES(?,?,0,0,?,0,0,0)
+            INSERT INTO user_lab(user_id,lab_id,points,position,repository,coverage_percentage,tests_failed_on_enemy,tests_enemy_passed,gitlabUsername,accessToken)
+            VALUES(?,?,0,0,?,0,0,0,?,?)
         `;
-        db.run(sql, [userId, labId, repositoryLink], (err, row) => {
+        db.run(sql, [userId, labId, repositoryLink,username, accessToken], (err, row) => {
             if (err) {
                 console.log(err)
                 reject(new Exception(500, 'Database error'));
@@ -174,10 +174,59 @@ exports.getUserLabRepositoryLink = (userId, labId) => {
     });
 }
 
-exports.updateUserLabRepositoryLink = (userId, labId, link) => {
+exports.getGitLabUsername = (userId, labId) => {
     return new Promise((resolve, reject) => {
-        const sql = 'UPDATE user_lab SET repository = ? WHERE user_id = ? AND lab_id = ?';
-        db.get(sql, [link, userId, labId], (err, row) => {
+        const sql = 'SELECT gitlabUsername FROM user_lab WHERE user_id = ? AND lab_id = ?';
+        db.get(sql, [userId, labId], (err, row) => {
+            if (err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            }
+            else {
+                console.log(row)
+                resolve(row.gitlabUsername);
+            }
+        });
+    });
+}
+
+exports.getToken = (userId, labId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT accessToken FROM user_lab WHERE user_id = ? AND lab_id = ?';
+        db.get(sql, [userId, labId], (err, row) => {
+            if (err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            }
+            else {
+                console.log(row)
+                resolve(row.accessToken);
+            }
+        });
+    });
+}
+
+exports.getUserLabCredentials = (userId, labId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT repository, gitlabUsername, accessToken FROM user_lab WHERE user_id = ? AND lab_id = ?';
+        db.get(sql, [userId, labId], (err, row) => {
+            if (err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            }
+            else {
+                console.log(row)
+                resolve(row);
+            }
+        });
+    });
+}
+
+exports.updateUserLabRepositoryLink = (userId, labId, link, username, token) => {
+    console.log(`UPDATING WITH VALUES ${link} - ${username} - ${token}`)
+    return new Promise((resolve, reject) => {
+        const sql = 'UPDATE user_lab SET repository = ?, gitlabUsername = ?, accessToken = ? WHERE user_id = ? AND lab_id = ?';
+        db.get(sql, [link, username, token, userId, labId], (err, row) => {
             if (err) {
                 console.log(err)
                 reject(new Exception(500, 'Database error'));
@@ -277,13 +326,13 @@ exports.updateUserLabCoverage = (userId, labId, coverage) => {
 exports.getUserLabByUserIdLabId = (userId,labId) => {
     return new Promise((resolve, reject) => {
         const sql = `SELECT * FROM user_lab WHERE user_id=? AND lab_id=?`;
-        db.all(sql, [userId,labId], (err, rows) => {
+        db.get(sql, [userId,labId], (err, row) => {
             if (err) {
                 console.log(err)
                 reject(new Exception(500, 'Database error'));
             }
             else {
-                resolve(rows);
+                resolve(row);
             }
         });
     });

@@ -153,9 +153,19 @@ exports.getUserLabRepositoryLink = async (req, res) => {
     }
 };
 
+exports.getUserLabCredentials = async (req, res) => {
+    try {
+        const result = await userService.getUserLabCredentials(req.user.id,req.query.labId);
+        res.status(200).json(result);
+    } catch (e) {
+        console.log(e)
+        res.status(e.code).end(e.message);
+    }
+};
+
 exports.updateUserLabRepositoryLink = async (req, res) => {
     try {
-        const result = await userService.updateUserLabRepositoryLink(req.user.id,req.query.labId,req.body.link);
+        const result = await userService.updateUserLabRepositoryLink(req.user.id, req.query.labId, req.body.link, req.body.username, req.body.token);
         res.status(200).json(result);
     } catch (e) {
         console.log(e)

@@ -161,13 +161,13 @@ exports.createLab = (lab) => {
     });
 }
 
-exports.insertLabIdealSolution = (id,linkToIdealSolution) => {
+exports.insertLabIdealSolution = (id,linkToIdealSolution,username,accessToken) => {
     return new Promise((resolve, reject) => {
         const sql = `
-                    INSERT INTO lab_ideal_solution(lab_id,solution_repository)
-                    VALUES(?,?)
+                    INSERT INTO lab_ideal_solution(lab_id,solution_repository,submitterUsername,gitLabAccessToken)
+                    VALUES(?,?,?,?)
                     `;
-        db.run(sql, [id,linkToIdealSolution], function (err) {
+        db.run(sql, [id,linkToIdealSolution,username,accessToken], function (err) {
             if (err) {
                 console.log(err)
                 reject(new Exception(500, 'Database error'));
@@ -215,14 +215,14 @@ exports.updateLab = (lab) => {
     });
 }
 
-exports.updateLabLinkToIdealSolution = (lab) => {
+exports.updateLabLinkToIdealSolution = (lab, username, token) => {
     return new Promise((resolve, reject) => {
         const sql = `
                     UPDATE lab_ideal_solution
-                    SET solution_repository = ?
+                    SET solution_repository = ?, submitterUsername = ?, gitLabAccessToken = ? 
                     WHERE lab_id=?
                     `;
-        db.run(sql, [lab.linkToIdealSolution,lab.id], (err, row) => {
+        db.run(sql, [lab.linkToIdealSolution, username, token, lab.id], (err, row) => {
             if (err) {
                 console.log(err)
                 reject(new Exception(500, 'Database error'));

@@ -55,6 +55,8 @@ router.get('/labs/regionLeaderboard',userController.getUserLabRegionLeaderboard)
 
 router.get('/labs/repositoryLink',userController.getUserLabRepositoryLink)
 
+router.get('/labs/credentials',userController.getUserLabCredentials)
+
 router.put('/labs/repositoryLink',userController.updateUserLabRepositoryLink)
 
 router.get('/labs/solRepositoryLink', labController.getSolutionRepositoryLink)

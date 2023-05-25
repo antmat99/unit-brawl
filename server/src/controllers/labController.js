@@ -35,12 +35,15 @@ exports.getLeaderboardAdmin = async (req, res) => {
 
 exports.createAndStartLab = async (req, res) => {
     try {
-        const lab = req.body
+        const lab = req.body.lab
+        const accessToken = req.body.accessToken
+        const username = req.body.username
         delete lab.id
-        const ret = await labService.createLab(lab);
+        const ret = await labService.createLab(lab, username, accessToken);
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json(ret);
     } catch (e) {
+        console.log(e)
         res.status(e.code).end(e.message)
     }
 }
@@ -57,7 +60,7 @@ exports.getActiveLab = async (req, res) => {
 
 exports.updateLab = async (req, res) => {
     try {
-        const ret = await labService.updateLab(req.body)
+        const ret = await labService.updateLab(req.body.lab, req.body.username, req.body.token)
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json(ret);
     } catch (e) {
@@ -108,7 +111,7 @@ exports.getLabPlayersCount = async (req, res) => {
 
 exports.joinLab = async (req, res) => {
     try {
-        const ret = await labService.joinLab(req.user.id,req.body.repositoryLink);
+        const ret = await labService.joinLab(req.user.id,req.body.repositoryLink,req.body.username,req.body.accessToken);
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json(ret);
     } catch (e) {
@@ -152,7 +155,7 @@ exports.checkCoverage = async(req, res) => {
 /* Remove */
 exports.test = async (req, res) => {
     try {
-        const result = await labService.test()
+        const result = await labService.test(req.user.id)
         res.setHeader('Content-Type', 'application/json');
         res.status(200).json(result)
     } catch(e) {

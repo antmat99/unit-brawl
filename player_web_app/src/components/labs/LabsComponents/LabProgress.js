@@ -24,6 +24,8 @@ function LabProgress(props) {
     const [classesCovered, setClassesCovered] = useState()
     const [classesMissed, setClassesMissed] = useState()
 
+    const [error, setError] = useState(false)
+
     useEffect(() => {
         /* reqProgressState */
         setLoading(props.reqsProgressState.loading)
@@ -47,12 +49,15 @@ function LabProgress(props) {
     }, [props.reqsProgressState, props.coverageProgressState])
 
     const retryTests = async () => {
+        setError(false)
+        setCoverageLoading(false)
         setCheckDone(false)
         setCoverageCheckDone(false)
         checkProgress()
     }
 
     const retryCoverage = async () => {
+        setError(false)
         setCoverageCheckDone(false)
         checkCoverage()
     }
@@ -61,62 +66,69 @@ function LabProgress(props) {
         setLoading(true)
         props.handleCheckStarted()
         const reports = await API.checkProgress(props.studentRepoLink, props.solutionRepoLink)
-        setCompiles(reports.compiles)
-        if (reports.compiles) {
-            const testsReport = reports.testsReport
-            /* If needed, reports.testsReport contains
-                - totalTests
-                - failures
-                - errors
-                - skipped
-            */
-
-            const requirements = Object.keys(testsReport.testCases).map((key) => {
-                const classname = key.replace('it.polito.po.test.Test', '').substring(0, 2)
-                var failed = false
-                return {
-                    'classname': classname,
-                    'tests': testsReport.testCases[key].reduce((acc, cur) => {
-                        const tcObj = {
-                            'testname': cur.name,
-                        }
-
-                        if (cur.failureType) {
-                            failed = true
-                            tcObj.failureType = cur.failureType;
-                        }
-                        if (cur.failureMessage) {
-                            tcObj.failureMessage = cur.failureMessage;
-                        }
-                        if (cur.errorType) {
-                            failed = true
-                            tcObj.errorType = cur.errorType
-                        }
-                        if (cur.errorMessage) {
-                            tcObj.errorMessage = cur.errorMessage
-                        }
-                        acc.push(tcObj);
-                        return acc;
-                    }, []),
-                    'failed': failed
-                }
-            })
-
-            const reportContent = {
-                compiles: reports.compiles,
-                requirements: requirements
-            }
-            props.handleCheckDone(reportContent)
-            setRequirements(requirements)
+        if (reports.error === true) {
+            setError(true)
+            setLoading(false)
         } else {
-            const reportContent = {
-                compiles: reports.compiles
-            }
-            props.handleCheckDone(reportContent)
-        }
+            setCompiles(reports.compiles)
+            if (reports.compiles) {
+                const testsReport = reports.testsReport
+                /* If needed, reports.testsReport contains
+                    - totalTests
+                    - failures
+                    - errors
+                    - skipped
+                */
 
-        setCheckDone(true)
-        setLoading(false)
+                const requirements = Object.keys(testsReport.testCases).map((key) => {
+                    const classname = key.replace('it.polito.po.test.Test', '').substring(0, 2)
+                    var failed = false
+                    return {
+                        'classname': classname,
+                        'tests': testsReport.testCases[key].reduce((acc, cur) => {
+                            const tcObj = {
+                                'testname': cur.name,
+                            }
+
+                            if (cur.failureType) {
+                                failed = true
+                                tcObj.failureType = cur.failureType;
+                            }
+                            if (cur.failureMessage) {
+                                tcObj.failureMessage = cur.failureMessage;
+                            }
+                            if (cur.errorType) {
+                                failed = true
+                                tcObj.errorType = cur.errorType
+                            }
+                            if (cur.errorMessage) {
+                                tcObj.errorMessage = cur.errorMessage
+                            }
+                            acc.push(tcObj);
+                            return acc;
+                        }, []),
+                        'failed': failed
+                    }
+                })
+
+                const reportContent = {
+                    compiles: reports.compiles,
+                    requirements: requirements
+                }
+                props.handleCheckDone(reportContent)
+                setRequirements(requirements)
+            } else {
+                const reportContent = {
+                    compiles: reports.compiles
+                }
+                props.handleCheckDone(reportContent)
+            }
+
+            console.log('About to set loading to false and checkDone to true')
+            setCheckDone(true)
+            setLoading(false)
+            console.log('Just set loading to false and checkDone to true')
+        }
     }
 
     const checkCoverage = async () => {
@@ -124,6 +136,11 @@ function LabProgress(props) {
         props.handleCoverageCheckStarted()
         const result = await API.checkCoverage()
         setStudentCompiles(result.compiles)
+        if(result.error === true) {
+            setError(true)
+            setLoading(false)
+        }
+        else {
         if (result.compiles) {
             setStudentTestsPass(result.studentTestsPass)
             if (result.studentTestsPass) {
@@ -179,6 +196,13 @@ function LabProgress(props) {
         }
         setCoverageCheckDone(true)
         setCoverageLoading(false)
+    }
+    }
+
+    if(error && !loading) {
+        return <>
+                <ErrorCard retryTests={retryTests} />
+            </>
     }
 
     if (!checkDone && !loading) {
@@ -439,15 +463,15 @@ function colorPicker(value) {
 }
 
 function CoverageDashboard(props) {
-    const filterRequirements = (obj, threshold) => {
-        const result = {};
-        for (const key in obj) {
-            if (obj.hasOwnProperty(key) && obj[key] > threshold) {
-                result[key] = obj[key];
+    /*     const filterRequirements = (obj, threshold) => {
+            const result = {};
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key) && obj[key] > threshold) {
+                    result[key] = obj[key];
+                }
             }
-        }
-        return result;
-    }
+            return result;
+        } */
     const totalInstructions = Number(props.instrCovered) + Number(props.instrMissed)
     const totalMethods = Number(props.methodsCovered) + Number(props.methodsMissed)
     const totalClasses = Number(props.classesCovered) + Number(props.classesMissed)
@@ -545,6 +569,17 @@ function CompiledFailedCard(props) {
     );
 }
 
+function ErrorCard(props) {
+    return (
+        <Card bg='danger' text='light'>
+            <Card.Body>
+                <Card.Title>Something went wrong when checking progress. Make sure your gitlab username and access token are correct</Card.Title>
+                <Button variant='light' onClick={props.retryTests}>Try again</Button>
+            </Card.Body>
+        </Card>
+    );
+}
+
 function TooManyTestsAlert(props) {
     return (
         <Alert variant='warning'>
@@ -553,7 +588,7 @@ function TooManyTestsAlert(props) {
     )
 }
 
-function TestNumberExceededAlert(props) {
+/* function TestNumberExceededAlert(props) {
 
     return (
         <>
@@ -571,13 +606,13 @@ function TestNumberExceededAlert(props) {
             </Table>
         </>
     )
-}
+} */
 
-function ExceededTableRow(props) {
+/* function ExceededTableRow(props) {
     return <tr>
         <td>{props.req}</td>
         <td>{props.tests}</td>
     </tr>
-}
+} */
 
 export default LabProgress

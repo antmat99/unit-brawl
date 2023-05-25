@@ -2,6 +2,7 @@ import Result from './models/Result'
 import Avatar from './models/Avatar';
 import Lab from './models/Lab';
 
+//const URL = 'http://localhost:3001/eipiai'
 const URL = '/eipiai'
 
 /* Login APIs */
@@ -78,7 +79,7 @@ async function getLabs() {
     }
 }
 
-async function createAndStartLab(lab) {
+async function createAndStartLab(lab, username, accessToken) {
     const response = await fetch(URL + '/admin/labs',
         {
             method: 'POST',
@@ -87,7 +88,9 @@ async function createAndStartLab(lab) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                ...lab
+                lab: lab,
+                username: username,
+                accessToken: accessToken
             })
         }
     );
@@ -99,7 +102,7 @@ async function createAndStartLab(lab) {
 async function getActiveLab() {
     //set to undefined if there isn't any active lab (res code is 404)
     const response = await fetch(URL + '/admin/labs/active', {credentials: 'include'});
-    if(response.status == 404) return undefined;
+    if(response.status === 404) return undefined;
     const labJson = await response.json();
     console.log(response.status)
     if (response.ok) {
@@ -120,7 +123,7 @@ async function getActiveLab() {
 }
 
 
-async function updateLab(lab) {
+async function updateLab(lab, username, token) {
     //throw error message if res code is 500
     const response = await fetch(URL + '/admin/labs',
         {
@@ -130,7 +133,9 @@ async function updateLab(lab) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                ...lab
+                lab: lab,
+                username: username,
+                token: token
             })
         }
     );

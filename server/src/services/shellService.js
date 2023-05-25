@@ -26,6 +26,13 @@ exports.cloneIdealSolution = async (linkToRepo, directoryName) => {
     
 }
 
+exports.cloneIdealSolutionPrivate = async (linkToRepo, directoryName, gitUsername, accessToken) => {
+    const protocol = 'https://'
+    const linkNoHttps = linkToRepo.slice(protocol.length)
+    console.log(`git clone https://${gitUsername}:${accessToken}@${linkNoHttps}.git ${directoryName}`)
+    await exec(`git clone https://${gitUsername}:${accessToken}@${linkNoHttps}.git ${directoryName}`)
+}
+
 exports.cloneRepoInDirectory = async (linkToRepo, directoryName) => {
     const correctPath = path.join(parentFolder, directoryName)
     console.log('Cloning repo ' + linkToRepo + ' into ' + correctPath);
@@ -34,6 +41,13 @@ exports.cloneRepoInDirectory = async (linkToRepo, directoryName) => {
     console.log(`stdout clone: ${stdout}`);
     console.log(`stderr clone: ${stderr}`);
     */
+}
+
+exports.clonePrivateRepoInDir = async (linkToRepo, directoryName, gitUsername, accessToken) => {
+    const protocol = 'https://'
+    const linkNoHttps = linkToRepo.slice(protocol.length)
+    console.log(`git clone https://${gitUsername}:${accessToken}@${linkNoHttps}.git ${directoryName}`)
+    await exec(`git clone https://${gitUsername}:${accessToken}@${linkNoHttps}.git ${directoryName}`)
 }
 
 exports.getTestPath = (project_path) => {
@@ -64,10 +78,10 @@ exports.mavenCompile = (projectDir) => {
 
 exports.mavenTestCompile = (projectDir) => {
     const startTime = performance.now()
-    //const correctProjectDirPath = utilPath.toAbsolutePath(path.normalize(projectDir));
+    const correctProjectDirPath = utilPath.toAbsolutePath(path.normalize(projectDir));
     try {
-        e.execSync(`cd ${projectDir} && mvn clean test-compile`)
-        //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn clean test-compile`);
+        //e.execSync(`cd ${projectDir} && mvn clean test-compile`)
+        e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn clean test-compile`);
 
     } catch (e) {
         const endTime = performance.now()

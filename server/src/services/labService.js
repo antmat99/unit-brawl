@@ -99,18 +99,18 @@ const getLabLeaderboardAdmin = async (labId) => {
     }
 }
 
-exports.createLab = async (lab) => {
+exports.createLab = async (lab, username, accessToken) => {
     try {
         console.log('Cleaning ideal solution directory...')
         fileService.clearDirectory('test/ideal_solution')
         console.log('Cloning ideal solution...')
-        await shellService.cloneIdealSolution(lab.linkToIdealSolution, 'test/ideal_solution')
+        await shellService.cloneIdealSolutionPrivate(lab.linkToIdealSolution, 'test/ideal_solution', username, accessToken)
         console.log('Successfully cloned ideal solution')
         const id = await labDao.createLab(lab)
-        await labDao.insertLabIdealSolution(id, lab.linkToIdealSolution);
+        await labDao.insertLabIdealSolution(id, lab.linkToIdealSolution, username, accessToken);
         await achievementDao.clearAchievementFake();
-        console.log('Created DB entry for new lab')
-    } catch(e) {
+        console.log(`Created DB entry for new lab with username ${username} and access token ${accessToken}`)
+    } catch (e) {
         console.log('Error creating lab: ' + e)
         throw new Exception(500, e.message)
     }
@@ -128,6 +128,7 @@ exports.getActiveLab = async () => {
     }
 }
 
+/*
 exports.updateLab = async (lab) => {
     try {
         //TODO it should be atomic
@@ -144,6 +145,25 @@ exports.updateLab = async (lab) => {
             throw new Exception(500, `Invalid git repository link: ${lab.linkToIdealSolution}`)
         }
     } catch (e) {
+        throw new Exception(500, e.message)
+    }
+}*/
+
+exports.updateLab = async (lab, username, accessToken) => {
+    try {
+        console.log('Cleaning ideal solution directory...')
+        fileService.clearDirectory('test/ideal_solution')
+        console.log('Cloning ideal solution...')
+        await shellService.cloneIdealSolutionPrivate(lab.linkToIdealSolution, 'test/ideal_solution', username, accessToken)
+        console.log('Successfully cloned ideal solution')
+        await labDao.updateLab(lab);
+        await labDao.updateLabLinkToIdealSolution(lab, username, accessToken);
+        let ret = await labDao.getLabByIdAdmin(lab.id);
+        const leaderboard = await getLabLeaderboardAdmin(lab.id)
+        ret['leaderboard'] = leaderboard;
+        return ret;
+    } catch (e) {
+        console.log(e)
         throw new Exception(500, e.message)
     }
 }
@@ -201,21 +221,19 @@ exports.getLabPlayersCount = async (labId) => {
     }
 }
 
-exports.joinLab = async (userId, repositoryLink) => {
+exports.joinLab = async (userId, repositoryLink, username, accessToken) => {
     try {
         const activeLab = await labDao.getActiveLab();
         if (activeLab.length == 0) throw (new Exception(404, 'No active labs found.'));
         if (activeLab.length > 1) throw (new Exception(500, 'Database error: there should be at most one active lab, but found ' + ret.length + '.'));
-        if (isValidGitRepo(repositoryLink)) {
-            const ret = await userLabDao.insertUserLab(userId, activeLab[0].id, repositoryLink);
-            const uncompletedCoverageAchievements = await achievementDao.getUncompletedCoverageAchievements(userId);
-            for (let achievement of uncompletedCoverageAchievements) {
-                await achievementDao.addUserAchievementFake(userId, achievement.achievement_id, 0, achievement.code);
-            }
-            return ret;
-        } else {
-            throw new Exception(500, 'Invalid git repository link')
+
+        const ret = await userLabDao.insertUserLab(userId, activeLab[0].id, repositoryLink, username, accessToken);
+        const uncompletedCoverageAchievements = await achievementDao.getUncompletedCoverageAchievements(userId);
+        for (let achievement of uncompletedCoverageAchievements) {
+            await achievementDao.addUserAchievementFake(userId, achievement.achievement_id, 0, achievement.code);
         }
+        return ret;
+
     } catch (e) {
         if (e.code != 500) throw new Exception(e.code, e.message)
         throw new Exception(500, e.message)
@@ -263,18 +281,86 @@ exports.checkProgress = async (sid) => {
         testsReport: {}
     }
 
-
     const studentId = await userDao.getNicknameById(sid)
     //const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
-    try {
-        var studentRepoLink = await userDao.getActiveLabStudentLink(sid)
-        studentRepoLink = studentRepoLink + '.git'
 
-        if(fs.existsSync(`test/packages/check/${studentId}`) && fs.readdirSync(`test/packages/check/${studentId}`).length !== 0) {
+    try {
+        const activeLab = await labDao.getActiveLab()
+        const userLab = await userLabDao.getUserLabByUserIdLabId(sid, activeLab[0].id)
+        const gitlabUsername = userLab.gitlabUsername
+        const accessToken = userLab.accessToken
+        const studentRepositoryLink = userLab.repository
+
+        if (fs.existsSync(`test/packages/check/${studentId}`) && fs.readdirSync(`test/packages/check/${studentId}`).length !== 0) {
             fileService.clearDirectory(`test/packages/check/${studentId}`)
         }
-        await shellService.cloneRepoInDirectory(studentRepoLink, `/check/${studentId}`)
+
+        await shellService.clonePrivateRepoInDir(studentRepositoryLink, `test/packages/check/${studentId}`, gitlabUsername, accessToken)
         console.log('Successfully cloned student\'s solution')
+        // TODO: update ideal
+        updateIdeal()
+        fileService.copyFolderSync(`${pathUtil.rootIdealsolution}/test/it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
+        console.log('Running ideal tests...')
+        try {
+            e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
+
+            //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
+
+            console.log('Ideal tests passed')
+            const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+            result.testsReport = this.analyzeTestReport(rawTestsReport)
+            cleanup(studentId)
+            return result
+        } catch (e) {
+            if (fs.readdirSync(`test/packages/check/${studentId}/target/classes`).length !== 0 && fs.readdirSync(`test/packages/check/${studentId}/target/test-classes`).length !== 0) {
+                /* Compilation succeeded, tests failed */
+                console.log('Ideal tests failed')
+                const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+                result.testsReport = this.analyzeTestReport(rawTestsReport)
+                cleanup(studentId)
+                return result
+            } else {
+                /* Compilation failed */
+                result.compiles = false
+                console.log('Student\'s solution does not compile')
+                cleanup(studentId)
+                return result
+            }
+        }
+    } catch (e) {
+        console.log('ERROR: ' + e)
+        result.error = true
+        return result
+        //cleanup(studentId)
+    }
+}
+
+/*
+exports.checkProgress = async (sid) => {
+    var result = {
+        compiles: true,
+        testsReport: {}
+    }
+
+
+    const studentId = await userDao.getNicknameById(sid)
+    const activeLab = await labDao.getActiveLab()
+    const userLab = await userLabDao.getUserLabByUserIdLabId(sid, activeLab[0].id)
+    const gitlabUsername = userLab.gitlabUsername
+    const accessToken = userLab.accessToken
+    //console.log(`Student ID: ${studentId} - Active Laboratory: ${JSON.stringify(activeLab[0])} - UserLab Item: ${JSON.stringify(userLab)} - GitLab Username: ${gitlabUsername} - Access Token: ${accessToken}`)
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
+
+    try {
+        var studentRepoLink = await userDao.getActiveLabStudentLink(sid)
+
+        if (fs.existsSync(`test/packages/check/${studentId}`) && fs.readdirSync(`test/packages/check/${studentId}`).length !== 0) {
+            fileService.clearDirectory(`test/packages/check/${studentId}`)
+        }
+        await shellService.clonePrivateRepoInDir(studentRepoLink, `test/packages/check/${studentId}`, gitlabUsername, accessToken)
+        console.log('Successfully cloned student\'s solution')
+
+        /*
         console.log('Checking if source code and tests compile...')
         const sourceCodeCompiles = await this.checkTestCompile(studentId)
         if (!sourceCodeCompiles) {
@@ -289,20 +375,39 @@ exports.checkProgress = async (sid) => {
         fileService.copyFolderSync(`${pathUtil.rootIdealsolution}/test/it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
 
         console.log('Running ideal tests...')
-        try {
-            e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
-            //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
-            console.log('Ideal tests passed')
-        } catch (e) {
-            console.log('Ideal tests failed')
-        }
-        const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
-        result.testsReport = this.analyzeTestReport(rawTestsReport)
-        cleanup(studentId)
-        return result
+        try {*/
+//e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
+/*
+e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="*it/**.java" clean test`);
+console.log('Ideal tests passed')
+} catch (e) {
+console.log('Ideal tests failed')
+}
+const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
+result.testsReport = this.analyzeTestReport(rawTestsReport)
+cleanup(studentId)
+ 
+return result
+ 
+
+} catch (e) {
+console.log('ERROR: ' + e)
+cleanup(studentId)
+}
+
+}
+*/
+
+exports.test = async (sid) => {
+    try {
+        const user = await userDao.getUserById(sid)
+        const studentId = user.nickname
+        const accessToken = user.gitlabAccessToken
+        const studentLink = 'https://gitlab.com/s292488/diet-student2'
+        console.log(`Student ID: ${studentId} - Access token: ${accessToken} - Link to repo: ${studentLink}`)
+        await shellService.clonePrivateRepoInDir(studentLink, `test/packages/tmp/${studentId}`, studentId, accessToken)
     } catch (e) {
-        console.log('ERROR: ' + e)
-        cleanup(studentId)
+        console.log('Error cloning private repo: ' + e)
     }
 }
 
@@ -316,46 +421,51 @@ exports.checkCoverage = async (sid) => {
     }
 
     const studentId = await userDao.getNicknameById(sid)
+    const activeLab = await labDao.getActiveLab()
+    const userLab = await userLabDao.getUserLabByUserIdLabId(sid, activeLab[0].id)
+    const gitlabUsername = userLab.gitlabUsername
+    const accessToken = userLab.accessToken
+    const studentRepositoryLink = userLab.repository
     //const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
 
     try {
-        const studentLink = await userDao.getActiveLabStudentLink(sid) + '.git'
         result.maxTestNumber = await labDao.getActiveLabMaxTestNumber()
         //fileService.clearDirectory(`test/packages/check/${studentId}`)
-        await shellService.cloneRepoInDirectory(studentLink, `/check/${studentId}`)
-        console.log('Checking if source code and tests compile...')
-        const sourceCodeCompiles = await this.checkTestCompile(studentId)
-        if (!sourceCodeCompiles) {
-            result.compiles = false
-            console.log('Student\'s solution does not compile')
-            cleanup(studentId)
-            return result
-        }
-        console.log('Student\'s source code and tests compile')
-        updateIdeal()
+        //await shellService.clonePrivateRepoInDir(studentLink, `/check/${studentId}`, studentId, password)
+        await shellService.clonePrivateRepoInDir(studentRepositoryLink, `test/packages/check/${studentId}`, gitlabUsername, accessToken)
+        updateIdeal() // TODO: handle privacy of ideal solution
         console.log('Running student\'s tests...')
         try {
             e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/${studentId}/**/*.java" clean test`);
             //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
             console.log('Student\'s tests passed')
-        } catch (e) {
-            result.studentTestsPass = false
-            console.log('Student\'s tests failed, did not generate coverage report')
+            result.studentTestNumberByRequirement = countTestByRequirement(studentId)
+            const rawCoverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
+            result.coverageReport = this.analyzeCoverageReport(rawCoverageReport)
+            const percentage = (Number(result.coverageReport.instructionsCovered) / (Number(result.coverageReport.instructionsCovered) + Number(result.coverageReport.instructionsMissed))) * 100
+            if (result.totalTests <= result.maxTestNumber) {
+                await updatePercentage(sid, percentage)
+            }
             cleanup(studentId)
             return result
+        } catch (e) {
+            if (fs.readdirSync(`test/packages/check/${studentId}/target/classes`).length === 0 || fs.readdirSync(`test/packages/check/${studentId}/target/test-classes`).length === 0) {
+                result.compiles = false
+                console.log('Student\'s solution does not compile')
+                cleanup(studentId)
+                return result
+            } else {
+                result.studentTestsPass = false
+                console.log('Student\'s tests failed, did not generate coverage report')
+                cleanup(studentId)
+                return result
+            }
         }
-        result.studentTestNumberByRequirement  = countTestByRequirement(studentId)
-        const rawCoverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
-        result.coverageReport = this.analyzeCoverageReport(rawCoverageReport)
-        const percentage = (Number(result.coverageReport.instructionsCovered) / (Number(result.coverageReport.instructionsCovered) + Number(result.coverageReport.instructionsMissed))) * 100
-        if(result.totalTests <= result.maxTestNumber){
-            await updatePercentage(sid, percentage)
-        }
-        cleanup(studentId)
-        return result
     } catch (e) {
         console.log('ERROR: ' + e)
-        cleanup(studentId)
+        result.error = true
+        return result
+        //cleanup(studentId)
     }
 }
 
