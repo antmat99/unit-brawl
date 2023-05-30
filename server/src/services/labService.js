@@ -273,7 +273,7 @@ exports.checkProgress = async (sid) => {
     }
 
     const studentId = await userDao.getNicknameById(sid)
-    //const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
 
     try {
         const activeLab = await labDao.getActiveLab()
@@ -292,13 +292,11 @@ exports.checkProgress = async (sid) => {
         fileService.copyFolderSync(`${pathUtil.rootIdealsolution}/test/it`, `${pathUtil.rootPackages}/check/${studentId}/test/it`)
         console.log('Running ideal tests...')
         try {
-            e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
+            //e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/it/**/*.java" clean test`)
 
-            //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
+            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
 
             console.log('Ideal tests passed')
-            //const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
-            //result.testsReport = this.analyzeTestReport(rawTestsReport)
             result.testsReport = aggregateTestResults(`test/packages/check/${studentId}/target/surefire-reports/`)
             cleanup(studentId)
             return result
@@ -306,8 +304,6 @@ exports.checkProgress = async (sid) => {
             if (fs.readdirSync(`test/packages/check/${studentId}/target/classes`).length !== 0 && fs.readdirSync(`test/packages/check/${studentId}/target/test-classes`).length !== 0) {
                 /* Compilation succeeded, tests failed */
                 console.log('Ideal tests failed')
-                //const rawTestsReport = fs.readFileSync(`test/packages/check/${studentId}/target/surefire-reports/TEST-it.polito.po.test.AllTests.xml`)
-                //result.testsReport = this.analyzeTestReport(rawTestsReport)
                 result.testsReport = aggregateTestResults(`test/packages/check/${studentId}/target/surefire-reports/`)
                 cleanup(studentId)
                 return result
@@ -322,21 +318,8 @@ exports.checkProgress = async (sid) => {
     } catch (e) {
         console.log('ERROR: ' + e)
         result.error = true
+        cleanup(studentId)
         return result
-        //cleanup(studentId)
-    }
-}
-
-exports.test = async (sid) => {
-    try {
-        const user = await userDao.getUserById(sid)
-        const studentId = user.nickname
-        const accessToken = user.gitlabAccessToken
-        const studentLink = 'https://gitlab.com/s292488/diet-student2'
-        console.log(`Student ID: ${studentId} - Access token: ${accessToken} - Link to repo: ${studentLink}`)
-        await shellService.clonePrivateRepoInDir(studentLink, `test/packages/tmp/${studentId}`, studentId, accessToken)
-    } catch (e) {
-        console.log('Error cloning private repo: ' + e)
     }
 }
 
@@ -355,24 +338,22 @@ exports.checkCoverage = async (sid) => {
     const gitlabUsername = await labDao.getLabSubmitterId(activeLab[0].id)
     const accessToken = await labDao.getLabAccessToken(activeLab[0].id)
     const studentRepositoryLink = userLab.repository
-    //const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\packages\\check\\${studentId}`
 
     try {
         result.maxTestNumber = await labDao.getActiveLabMaxTestNumber()
-        //fileService.clearDirectory(`test/packages/check/${studentId}`)
-        //await shellService.clonePrivateRepoInDir(studentLink, `/check/${studentId}`, studentId, password)
         await shellService.clonePrivateRepoInDir(studentRepositoryLink, `test/packages/check/${studentId}`, gitlabUsername, accessToken)
-        updateIdeal() // TODO: handle privacy of ideal solution
+        updateIdeal()
         console.log('Running student\'s tests...')
         try {
-            e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/${studentId}/**/*.java" clean test`);
-            //e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
+            //e.execSync(`cd test/packages/check/${studentId} && mvn -Dtest="**/${studentId}/**/*.java" clean test`);
+            e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
             console.log('Student\'s tests passed')
-            result.studentTestNumberByRequirement = countTestByRequirement(studentId)
+            result.studentTestNumberByRequirement = this.countTestByRequirement(studentId)
             const rawCoverageReport = fs.readFileSync(`${pathUtil.rootPackages}/check/${studentId}/target/site/jacoco/jacoco.xml`)
             result.coverageReport = this.analyzeCoverageReport(rawCoverageReport)
             const percentage = (Number(result.coverageReport.instructionsCovered) / (Number(result.coverageReport.instructionsCovered) + Number(result.coverageReport.instructionsMissed))) * 100
-            if (result.totalTests <= result.maxTestNumber) {
+            if (result.studentTestNumberByRequirement <= result.maxTestNumber) {
                 await updatePercentage(sid, percentage)
             }
             cleanup(studentId)
@@ -393,8 +374,8 @@ exports.checkCoverage = async (sid) => {
     } catch (e) {
         console.log('ERROR: ' + e)
         result.error = true
+        cleanup(studentId)
         return result
-        //cleanup(studentId)
     }
 }
 
@@ -419,7 +400,7 @@ exports.checkTestCompile = async (studentId) => {
 }
 
 function aggregateTestResults(folderPath) {
-    const fileNames = fs.readdirSync(folderPath); // Get the list of XML files in the folderù
+    const fileNames = fs.readdirSync(folderPath); // Get the list of XML files in the folder
 
     const options = {
         ignoreAttributes: false,
@@ -579,7 +560,7 @@ exports.analyzeCoverageReport = (rep) => {
     return result
 }
 
-function countTestByRequirement(studentId) {
+exports.countTestByRequirement = (studentId) => {
 
     var result = {}
 

@@ -12,6 +12,9 @@ const dayjs = require('dayjs');
 const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(customParseFormat)
 
+const e = require('child_process');
+const xml = require('fast-xml-parser')
+const fs = require('fs')
 const path = require('path');
 const schedule = require('node-schedule');
 
@@ -22,17 +25,18 @@ const rootPackages = utilPath.rootPackages;
 const rootWarzone = utilPath.rootWarzone;
 
 const { performance } = require('perf_hooks'); //for performance logging
+const { count } = require('console');
 
-exports.testFinalProcess = async () => {
+exports.testFinalProcess = async (labId) => {
     //await labDao.setActive(2, 1)
-    final_process();
+    finalProcess(labId);
 
 }
 
 /* Task run each midnight to eventually start final_process */
 const labStopper = schedule.scheduleJob('0 0 * * *', async () => {
     if (await shouldStartFinalProcess()) {
-        final_process()
+        finalProcess()
     }
     //labService.stopLabIfExpired()
 });
@@ -43,6 +47,211 @@ const shouldStartFinalProcess = async () => {
     else return activeLab[0].expiration_date == dayjs().format('DD-MM-YYYY')
 }
 
+const finalProcess = async (labId) => {
+    try {
+        const username = await labDao.getLabSubmitterId(labId)
+        const accessToken = await labDao.getLabAccessToken(labId)
+        const idealLink = await labDao.getLinkToIdealSolution(labId)
+        const cap = await labDao.getTestCap(labId)
+        console.log(`Starting war for lab ${labId}`)
+        const participants = await labDao.getUserLabListByLabId(labId)
+        console.log('Participants for this lab are...')
+        console.log(participants)
+        console.log(`Cloning ideal solution from ${idealLink}`)
+        fileService.clearDirectory('test/ideal_solution')
+        await shellService.cloneIdealSolutionPrivate(idealLink, 'test/ideal_solution', username, accessToken)
+        console.log('Successfully cloned ideal solution')
+        console.log('Filtering solutions...')
+        var survivors = await filter(participants, username, accessToken, cap)
+        console.log('SURVIVORS')
+        console.log(survivors)
+    } catch (e) {
+        console.log('ERROR during final process')
+        console.log(e)
+    }
+}
+
+const filter = async (participants, username, accessToken, cap) => {
+    /*
+    var survivors = []
+    participants.forEach(async (p) => {
+        const studentId = await userDao.getNicknameById(p.user_id)
+        await shellService.clonePrivateRepoInDir(p.repository, `test/warzone/${studentId}`, username, accessToken)
+        const checkResult = await checkStudent(studentId, cap)
+        p.idealTestsPass = checkResult.idealTestsPass
+        p.eliminated = checkResult.eliminated
+        if(p.eliminated === false) {
+            survivors.push(p)
+        }
+    })
+    
+    return survivors
+    */
+
+    const survivors = await Promise.all(
+        participants.map(async (p) => {
+            const studentId = await userDao.getNicknameById(p.user_id);
+            await shellService.clonePrivateRepoInDir(
+                p.repository,
+                `test/warzone/${studentId}`,
+                username,
+                accessToken
+            );
+            const checkResult = await checkStudent(studentId, cap);
+            p.idealTestsPass = checkResult.idealTestsPass;
+            p.eliminated = checkResult.eliminated;
+            if (p.eliminated === false) {
+                return p;
+            }
+        })
+    );
+
+    return survivors.filter(Boolean);
+}
+
+const checkStudent = async (studentId, cap) => {
+    var result = {
+        idealTestsPass: true,
+        eliminated: false
+    }
+    console.log(`Checking ${studentId}`)
+    const numberOfStudentTests = runStudentTestsOnStudent(studentId) // If compile failed or tests failed, this is false
+    if (numberOfStudentTests !== false) {
+        if (numberOfStudentTests <= cap) {
+            const idealTestsOnStudentResult = runIdealTestsOnStudent(studentId)
+            if (idealTestsOnStudentResult.compiles) {
+                if (idealTestsOnStudentResult.passed === false) {
+                    result.idealTestsPass = false // Malus
+                }
+                const studentTestsPassOnIdeal = runStudentTestsOnIdeal(studentId)
+                if (studentTestsPassOnIdeal === false) {
+                    console.log(`${studentId} eliminated - Student\'s tests fail on ideal solution`)
+                    result.eliminated = true // because student's tests fail on ideal solution
+                }
+            } else {
+                console.log(`${studentId} eliminated - Compilation failed with ideal tests`)
+                result.eliminated = true // because compilation failed with ideal tests
+            }
+        } else {
+            console.log(`${studentId} eliminated - Exceeded test cap: ${numberOfStudentTests} / ${cap}`)
+            result.eliminated = true // because exceeded test number cap
+        }
+    } else {
+        console.log(`${studentId} eliminated - Student\'s tests either don\'t compile or fail`)
+        result.eliminated = true // because either compilation failed with student's tests or student's tests fail
+    }
+
+    return result
+}
+
+const runStudentTestsOnStudent = (studentId) => {
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\warzone\\${studentId}`
+    try {
+        console.log(`Running student\'s tests on student solution...`)
+        e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -Dtest="**/${studentId}/**/*.java" clean test`);
+    } catch (e) {
+        /* Whether the compilation failed or the tests failed is irrelevant, all it matters is that something went wrong */
+        console.log(`Student's tests compilation failed or tests failed for student ${studentId}`)
+        return false
+    }
+
+    console.log(`Student\'s tests passed on own solution for user ${studentId}`)
+    const testNumber = countStudentTests(studentId)
+    console.log(`Student ${studentId} has submitted ${testNumber} tests`)
+    return testNumber
+}
+
+const countStudentTests = (studentId) => {
+
+    var result = {}
+
+    const options = {
+        ignoreAttributes: false,
+        attributeNamePrefix: "",
+        parseNodeValue: true
+    };
+    const parser = new xml.XMLParser(options);
+
+    const xmlFiles = fs.readdirSync(`test/warzone/${studentId}/target/surefire-reports`).filter(file => path.extname(file) === '.xml')
+    xmlFiles.forEach(file => {
+        const rep = fs.readFileSync(`test/warzone/${studentId}/target/surefire-reports/${file}`)
+        const report = parser.parse(rep)
+        const testsuite = report['testsuite']
+        const testcases = testsuite['testcase']
+        if (testcases.length > 1) {
+            testcases.forEach(tc => {
+                const req = `R${Number.parseInt(tc.name[5])}`
+                if (!result.hasOwnProperty(req)) {
+                    result[req] = 1
+                } else {
+                    result[req]++
+                }
+            })
+        } else {
+            const req = `R${Number.parseInt(testcases.name[5])}`
+            if (!result.hasOwnProperty(req)) {
+                result[req] = 1
+            } else {
+                result[req]++
+            }
+        }
+    })
+
+    let totalTests = 0;
+
+    for (const req in result) {
+        if (result.hasOwnProperty(req)) {
+            totalTests += result[req];
+        }
+    }
+    console.log(JSON.stringify(totalTests))
+    return totalTests;
+}
+
+const runIdealTestsOnStudent = (studentId) => {
+    var result = {
+        compiles: true,
+        passed: true
+    }
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\warzone\\${studentId}`
+    try {
+        fileService.copyFolderSync(`test/ideal_solution/test/it`, `test/warzone/${studentId}/test/it`)
+        console.log(`Running ideal tests on student solution...`)
+        e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
+    } catch (e) {
+        if (fs.readdirSync(`test/warzone/${studentId}/target/classes`).length !== 0 && fs.readdirSync(`test/warzone/${studentId}/target/test-classes`).length !== 0) {
+            /* Compilation succeeded, tests failed */
+            console.log(`Ideal tests failed on student solution for ${studentId}`)
+            result.passed = false
+        } else {
+            console.log(`Compilation with ideal tests failed for student ${studentId}`)
+            result.compiles = false
+        }
+    } finally {
+        if (result.passed === true && result.compiles === true) console.log(`Ideal tests passed on student solution for ${studentId}`)
+        fileService.clearDirectory(`test/warzone/${studentId}/test/it`)
+        fileService.deleteDirectory(`test/warzone/${studentId}/test/it`)
+        return result
+    }
+}
+
+const runStudentTestsOnIdeal = (studentId) => {
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\ideal_solution`
+    try {
+        fileService.copyFolderSync(`test/warzone/${studentId}/test/${studentId}`, `test/ideal_solution/test/${studentId}`)
+        console.log(`Running student\'s tests on ideal solution...`)
+        e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
+        console.log(`Student\'s tests passed on ideal solution for student ${studentId}`)
+        fileService.clearDirectory(`test/ideal_solution/test/${studentId}`)
+        fileService.deleteDirectory(`test/ideal_solution/test/${studentId}`)
+        return true
+    } catch (e) {
+        console.log(`Student\'s tests failed on ideal for student ${studentId}`)
+        return false
+    }
+}
+
+/*
 const final_process = async () => {
     console.log('Starting final process...')
     try {
@@ -91,9 +300,11 @@ const final_process = async () => {
         console.log('ERROR');
         console.log(e);
     }
-
-
+ 
+ 
 }
+ 
+*/
 
 //returns filtered solutions
 const filterSolutions = async (solutions) => {

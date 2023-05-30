@@ -7,7 +7,7 @@ const gitlabService = require('../services/gitlabService')
 const gameService = require('../services/gameService')
 
 router.get('/', (req,res) => {
-    gameService.testFinalProcess();
+    gameService.testFinalProcess(req.query.labId);
     res.end();
 })
 
