@@ -63,8 +63,12 @@ const finalProcess = async (labId) => {
         console.log('Successfully cloned ideal solution')
         console.log('Filtering solutions...')
         var survivors = await filter(participants, username, accessToken, cap)
-        console.log('SURVIVORS')
+        console.log('Survivors: ')
         console.log(survivors)
+        assembleFiringSquad()
+        console.log('Firing squad assembled')
+        console.log('Starting the battle...')
+        await battle(participants)
     } catch (e) {
         console.log('ERROR during final process')
         console.log(e)
@@ -72,28 +76,14 @@ const finalProcess = async (labId) => {
 }
 
 const filter = async (participants, username, accessToken, cap) => {
-    /*
-    var survivors = []
-    participants.forEach(async (p) => {
-        const studentId = await userDao.getNicknameById(p.user_id)
-        await shellService.clonePrivateRepoInDir(p.repository, `test/warzone/${studentId}`, username, accessToken)
-        const checkResult = await checkStudent(studentId, cap)
-        p.idealTestsPass = checkResult.idealTestsPass
-        p.eliminated = checkResult.eliminated
-        if(p.eliminated === false) {
-            survivors.push(p)
-        }
-    })
-    
-    return survivors
-    */
 
     const survivors = await Promise.all(
         participants.map(async (p) => {
             const studentId = await userDao.getNicknameById(p.user_id);
+            p.user_id = studentId
             await shellService.clonePrivateRepoInDir(
                 p.repository,
-                `test/warzone/${studentId}`,
+                `test/warzone/participants/${studentId}`,
                 username,
                 accessToken
             );
@@ -102,6 +92,9 @@ const filter = async (participants, username, accessToken, cap) => {
             p.eliminated = checkResult.eliminated;
             if (p.eliminated === false) {
                 return p;
+            } else {
+                fileService.clearDirectory(`test/warzone/participants/${studentId}`)
+                fileService.deleteDirectory(`test/warzone/participants/${studentId}`)
             }
         })
     );
@@ -145,7 +138,7 @@ const checkStudent = async (studentId, cap) => {
 }
 
 const runStudentTestsOnStudent = (studentId) => {
-    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\warzone\\${studentId}`
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\warzone\\participants\\${studentId}`
     try {
         console.log(`Running student\'s tests on student solution...`)
         e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -Dtest="**/${studentId}/**/*.java" clean test`);
@@ -172,9 +165,9 @@ const countStudentTests = (studentId) => {
     };
     const parser = new xml.XMLParser(options);
 
-    const xmlFiles = fs.readdirSync(`test/warzone/${studentId}/target/surefire-reports`).filter(file => path.extname(file) === '.xml')
+    const xmlFiles = fs.readdirSync(`test/warzone/participants/${studentId}/target/surefire-reports`).filter(file => path.extname(file) === '.xml')
     xmlFiles.forEach(file => {
-        const rep = fs.readFileSync(`test/warzone/${studentId}/target/surefire-reports/${file}`)
+        const rep = fs.readFileSync(`test/warzone/participants/${studentId}/target/surefire-reports/${file}`)
         const report = parser.parse(rep)
         const testsuite = report['testsuite']
         const testcases = testsuite['testcase']
@@ -213,13 +206,13 @@ const runIdealTestsOnStudent = (studentId) => {
         compiles: true,
         passed: true
     }
-    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\warzone\\${studentId}`
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\warzone\\participants\\${studentId}`
     try {
-        fileService.copyFolderSync(`test/ideal_solution/test/it`, `test/warzone/${studentId}/test/it`)
+        fileService.copyFolderSync(`test/ideal_solution/test/it`, `test/warzone/participants/${studentId}/test/it`)
         console.log(`Running ideal tests on student solution...`)
         e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/it/**/*.java" clean test`);
     } catch (e) {
-        if (fs.readdirSync(`test/warzone/${studentId}/target/classes`).length !== 0 && fs.readdirSync(`test/warzone/${studentId}/target/test-classes`).length !== 0) {
+        if (fs.readdirSync(`test/warzone/participants/${studentId}/target/classes`).length !== 0 && fs.readdirSync(`test/warzone/participants/${studentId}/target/test-classes`).length !== 0) {
             /* Compilation succeeded, tests failed */
             console.log(`Ideal tests failed on student solution for ${studentId}`)
             result.passed = false
@@ -229,8 +222,8 @@ const runIdealTestsOnStudent = (studentId) => {
         }
     } finally {
         if (result.passed === true && result.compiles === true) console.log(`Ideal tests passed on student solution for ${studentId}`)
-        fileService.clearDirectory(`test/warzone/${studentId}/test/it`)
-        fileService.deleteDirectory(`test/warzone/${studentId}/test/it`)
+        fileService.clearDirectory(`test/warzone/participants/${studentId}/test/it`)
+        fileService.deleteDirectory(`test/warzone/participants/${studentId}/test/it`)
         return result
     }
 }
@@ -238,7 +231,7 @@ const runIdealTestsOnStudent = (studentId) => {
 const runStudentTestsOnIdeal = (studentId) => {
     const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\ideal_solution`
     try {
-        fileService.copyFolderSync(`test/warzone/${studentId}/test/${studentId}`, `test/ideal_solution/test/${studentId}`)
+        fileService.copyFolderSync(`test/warzone/participants/${studentId}/test/${studentId}`, `test/ideal_solution/test/${studentId}`)
         console.log(`Running student\'s tests on ideal solution...`)
         e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/${studentId}/**/*.java" clean test`);
         console.log(`Student\'s tests passed on ideal solution for student ${studentId}`)
@@ -251,6 +244,97 @@ const runStudentTestsOnIdeal = (studentId) => {
     }
 }
 
+const assembleFiringSquad = () => {
+
+    const srcFolder = 'test/warzone/'
+    const dstFolder = 'test/warzone/firingSquad/'
+    if (!fs.existsSync(dstFolder)) {
+        fs.mkdirSync(dstFolder);
+    }
+
+    // Read the contents of the source folder
+    fs.readdirSync(srcFolder).forEach((folderName) => {
+        const sourceTestFolder = path.join(srcFolder, folderName, 'test', folderName);
+        const targetTestFolder = path.join(dstFolder, folderName);
+
+        // Check if the source test folder exists
+        if (fs.existsSync(sourceTestFolder)) {
+            // Create the target test folder if it doesn't exist
+            if (!fs.existsSync(targetTestFolder)) {
+                fs.mkdirSync(targetTestFolder);
+            }
+
+            // Copy the contents of the source test folder to the target test folder
+            fs.readdirSync(sourceTestFolder).forEach((file) => {
+                const sourceFilePath = path.join(sourceTestFolder, file);
+                const targetFilePath = path.join(targetTestFolder, file);
+                fs.copyFileSync(sourceFilePath, targetFilePath);
+            });
+        }
+    })
+}
+
+const battle = async (participants) => {
+    participants.forEach(async (p) => {
+        const studentId = await userDao.getNicknameById(p.user_id)
+        await copyTestBatteryInStudent(studentId)
+        /*
+        await runTestBatteryOnStudent(p.user_id)
+        await processResult(p.user_id)
+        */
+    })
+}
+
+const copyTestBatteryInStudent = async (studentId) => {
+
+    const participantsFolder = 'test/warzone/participants';
+    const firingSquadFolder = 'test/warzone/firingSquad';
+
+    fs.readdirSync(participantsFolder).forEach((p) => {
+        /* Remove student's own tests to avoid running own tests on own solution */
+        fileService.clearDirectory(`test/warzone/participants/${p}/test/${p}`)
+        fileService.deleteDirectory(`test/warzone/participants/${p}/test/${p}`)
+
+        fs.readdirSync(firingSquadFolder).forEach((f) => {
+            if(f !== p) {
+                fs.mkdirSync(`test/warzone/participants/${p}/test/${f}`)
+                fs.readdirSync(`test/warzone/firingSquad/${f}`).forEach((test) => {
+                    fs.copyFileSync(`test/warzone/firingSquad/${f}/${test}`, `test/warzone/participants/${p}/test/${f}`)
+                })
+            }
+        })
+    })
+
+    /*
+
+    fs.readdirSync(participantsFolder).forEach((folderName) => {
+        const testFolder = path.join(participantsFolder, folderName, 'test');
+
+        fs.readdirSync(firingSquadFolder).forEach((testFolderName) => {
+            if (testFolderName !== folderName) {
+                const sourceTestFolder = path.join(firingSquadFolder, testFolderName);
+                const targetTestFolder = path.join(testFolder, testFolderName);
+
+                if (!fs.existsSync(targetTestFolder)) {
+                    fs.mkdirSync(targetTestFolder);
+                  }
+
+                fs.readdirSync(sourceTestFolder).forEach((file) => {
+                    const sourceFilePath = path.join(sourceTestFolder, file);
+                    const targetFilePath = path.join(targetTestFolder, file);
+                    fs.copyFileSync(sourceFilePath, targetFilePath);
+                });
+            }
+        });
+
+        const originalTestFolder = path.join(firingSquadFolder, folderName);
+        if (fs.existsSync(originalTestFolder)) {
+            fs.rmdirSync(originalTestFolder, { recursive: true });
+        }
+    });
+    */
+
+}
 /*
 const final_process = async () => {
     console.log('Starting final process...')
