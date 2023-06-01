@@ -48,12 +48,66 @@ const shouldStartFinalProcess = async () => {
 }
 
 const finalProcess = async (labId) => {
+
+    const participants =
+        [
+            {
+                user_id: 's236507',
+                lab_id: 57,
+                points: 0,
+                position: 0,
+                repository: 'https://gitlab.com/s292488/diet-student2',
+                coverage_percentage: 72.168284789644,
+                tests_failed_on_enemy: 0,
+                tests_enemy_passed: 0,
+                idealTestsPass: true,
+                eliminated: false
+            },
+            {
+                user_id: 's292488',
+                lab_id: 57,
+                points: 0,
+                position: 0,
+                repository: 'https://gitlab.com/s292488/diet-student1',
+                coverage_percentage: 90.69579288025889,
+                tests_failed_on_enemy: 0,
+                tests_enemy_passed: 0,
+                idealTestsPass: true,
+                eliminated: false
+            },
+            {
+                user_id: 's123456',
+                lab_id: 57,
+                points: 0,
+                position: 0,
+                repository: 'https://gitlab.com/s292488/diet-student3',
+                coverage_percentage: 89.72491909385113,
+                tests_failed_on_enemy: 0,
+                tests_enemy_passed: 0,
+                idealTestsPass: true,
+                eliminated: false
+            },
+            {
+                user_id: 's000000',
+                lab_id: 57,
+                points: 0,
+                position: 0,
+                repository: 'https://gitlab.com/s292488/diet-ideal-tests-fail',
+                coverage_percentage: 36.650485436893206,
+                tests_failed_on_enemy: 0,
+                tests_enemy_passed: 0,
+                idealTestsPass: false,
+                eliminated: false
+            }
+        ]
+
     try {
         const username = await labDao.getLabSubmitterId(labId)
         const accessToken = await labDao.getLabAccessToken(labId)
         const idealLink = await labDao.getLinkToIdealSolution(labId)
         const cap = await labDao.getTestCap(labId)
         console.log(`Starting war for lab ${labId}`)
+        /*
         const participants = await labDao.getUserLabListByLabId(labId)
         console.log('Participants for this lab are...')
         console.log(participants)
@@ -65,10 +119,14 @@ const finalProcess = async (labId) => {
         var survivors = await filter(participants, username, accessToken, cap)
         console.log('Survivors: ')
         console.log(survivors)
+        
+        
         assembleFiringSquad()
         console.log('Firing squad assembled')
+        */
         console.log('Starting the battle...')
         await battle(participants)
+
     } catch (e) {
         console.log('ERROR during final process')
         console.log(e)
@@ -246,7 +304,7 @@ const runStudentTestsOnIdeal = (studentId) => {
 
 const assembleFiringSquad = () => {
 
-    const srcFolder = 'test/warzone/'
+    const srcFolder = 'test/warzone/participants/'
     const dstFolder = 'test/warzone/firingSquad/'
     if (!fs.existsSync(dstFolder)) {
         fs.mkdirSync(dstFolder);
@@ -256,6 +314,8 @@ const assembleFiringSquad = () => {
     fs.readdirSync(srcFolder).forEach((folderName) => {
         const sourceTestFolder = path.join(srcFolder, folderName, 'test', folderName);
         const targetTestFolder = path.join(dstFolder, folderName);
+
+        console.log(`Copying ${sourceTestFolder} in ${targetTestFolder}`)
 
         // Check if the source test folder exists
         if (fs.existsSync(sourceTestFolder)) {
@@ -275,65 +335,213 @@ const assembleFiringSquad = () => {
 }
 
 const battle = async (participants) => {
-    participants.forEach(async (p) => {
-        const studentId = await userDao.getNicknameById(p.user_id)
-        await copyTestBatteryInStudent(studentId)
-        /*
-        await runTestBatteryOnStudent(p.user_id)
-        await processResult(p.user_id)
-        */
-    })
+    var results = {}
+    try {
+        //await copyTestBatteryInStudents()
+
+        console.log('Copied test battery in students')
+        participants.forEach(async (p) => {
+            console.log(`Running test battery on ${p.user_id}...`)
+            //await runTestBatteryOnStudent(p.user_id)
+            await processResult(results, p.user_id)
+        })
+
+    } catch (e) {
+        console.log('Error during battle: ' + e)
+    }
+
 }
 
-const copyTestBatteryInStudent = async (studentId) => {
+const copyTestBatteryInStudents = async () => {
 
-    const participantsFolder = 'test/warzone/participants';
-    const firingSquadFolder = 'test/warzone/firingSquad';
+    const participantsDir = 'test/warzone/participants';
+    const firingSquadDir = 'test/warzone/firingSquad';
 
-    fs.readdirSync(participantsFolder).forEach((p) => {
-        /* Remove student's own tests to avoid running own tests on own solution */
-        fileService.clearDirectory(`test/warzone/participants/${p}/test/${p}`)
-        fileService.deleteDirectory(`test/warzone/participants/${p}/test/${p}`)
-
-        fs.readdirSync(firingSquadFolder).forEach((f) => {
-            if(f !== p) {
-                fs.mkdirSync(`test/warzone/participants/${p}/test/${f}`)
-                fs.readdirSync(`test/warzone/firingSquad/${f}`).forEach((test) => {
-                    fs.copyFileSync(`test/warzone/firingSquad/${f}/${test}`, `test/warzone/participants/${p}/test/${f}`)
-                })
-            }
+    try {
+        fs.readdirSync(firingSquadDir).forEach((firingSquadTestsFolder) => {
+            fs.readdirSync(participantsDir).forEach((participantsFolder) => {
+                if (firingSquadTestsFolder !== participantsFolder) {
+                    const dstPath = path.join(participantsDir, participantsFolder, 'test', firingSquadTestsFolder)
+                    if (!fs.existsSync(dstPath)) {
+                        fs.mkdirSync(dstPath)
+                        fs.readdirSync(path.join(firingSquadDir, firingSquadTestsFolder)).forEach((fileInFiringSquadTestFolder) => {
+                            const src = path.join(firingSquadDir, firingSquadTestsFolder, fileInFiringSquadTestFolder)
+                            const dest = path.join(participantsDir, participantsFolder, 'test', firingSquadTestsFolder, fileInFiringSquadTestFolder)
+                            fs.copyFileSync(src, dest)
+                        })
+                    }
+                }
+            })
         })
-    })
 
-    /*
+        fs.readdirSync(participantsDir).forEach((participantsFolder) => {
+            fs.rmSync(path.join(participantsDir, participantsFolder, 'test', participantsFolder), { recursive: true })
+        })
+    } catch (e) {
+        console.log('ERROR while copying test battery in student: ' + e)
+    }
 
-    fs.readdirSync(participantsFolder).forEach((folderName) => {
-        const testFolder = path.join(participantsFolder, folderName, 'test');
+}
 
-        fs.readdirSync(firingSquadFolder).forEach((testFolderName) => {
-            if (testFolderName !== folderName) {
-                const sourceTestFolder = path.join(firingSquadFolder, testFolderName);
-                const targetTestFolder = path.join(testFolder, testFolderName);
+const runTestBatteryOnStudent = async (studentId) => {
+    const correctProjectDirPath = `C:\\Users\\matty\\Poli\\Tesi\\unitBrawl\\unit-brawl\\server\\test\\warzone\\participants\\${studentId}`
+    try {
+        e.execSync(`docker run --rm --name my-maven-project -v "${correctProjectDirPath}":/usr/src/mymaven -w /usr/src/mymaven maven:3.8.6-openjdk-18 mvn -e -X -Dtest="**/s*/**/*.java" clean test`);
+        // e.execSync(`cd test/warzone/participants/${studentId} && mvn clean test -Dtest="**/s*/**/*.java`)
+        console.log(`${studentId} has passed every test!`)
+    } catch (e) {
+        console.log(`There are tests failures for ${studentId}`)
+    }
+}
 
-                if (!fs.existsSync(targetTestFolder)) {
-                    fs.mkdirSync(targetTestFolder);
-                  }
+const processResult = async (results, studentId) => {
+    const groupedReports = parseReportsForStudent()
+    //const studentScore = scoreStudent(groupedReports)
+}
 
-                fs.readdirSync(sourceTestFolder).forEach((file) => {
-                    const sourceFilePath = path.join(sourceTestFolder, file);
-                    const targetFilePath = path.join(targetTestFolder, file);
-                    fs.copyFileSync(sourceFilePath, targetFilePath);
-                });
+function parseReportsForStudent() {
+    let totalTests = 0;
+    let failedTests = 0;
+    let errorTests = 0;
+    let skippedTests = 0;
+    let failedTestsByAuthor = {};
+    const participantsDir = 'test/warzone/participants';
+
+    const participants = fs.readdirSync(participantsDir)
+    participants.forEach(participant => {
+        const participantDir = path.join(participantsDir, participant);
+        const reportsDir = path.join(participantDir, 'target/surefire-reports');
+
+        const files = fs.readdirSync(reportsDir)
+        const reportGroups = {};
+
+        files.forEach(file => {
+            if (file.endsWith('.txt')) {
+                const [id, testName] = file.split('.', 2);
+
+                if (id) {
+                    reportGroups.student = participant
+                    const reportName = file;
+
+                    if (!reportGroups[id]) {
+                        reportGroups[id] = [];
+                    }
+
+                    reportGroups[id].push(reportName);
+                }
             }
         });
 
-        const originalTestFolder = path.join(firingSquadFolder, folderName);
-        if (fs.existsSync(originalTestFolder)) {
-            fs.rmdirSync(originalTestFolder, { recursive: true });
-        }
-    });
-    */
+        const student = reportGroups['student']
 
+        Object.keys(reportGroups).forEach((key) => {
+            if (key !== 'student') {
+                let author = key
+                reportGroups[key].forEach((reportName) => {
+                    const reportPath = path.join('test/warzone/participants/', student, 'target/surefire-reports', reportName)
+                    const reportContent = fs.readFileSync(reportPath, 'utf-8')
+                    const totalMatches = reportContent.match(/Tests run: (\d+)/);
+                    const failuresMatches = reportContent.match(/Failures: (\d+)/);
+                    const errorsMatches = reportContent.match(/Errors: (\d+)/);
+                    const skippedMatches = reportContent.match(/Skipped: (\d+)/);
+    
+                    const total = totalMatches ? parseInt(totalMatches[1], 10) : 0;
+                    const failures = failuresMatches ? parseInt(failuresMatches[1], 10) : 0;
+                    const errors = errorsMatches ? parseInt(errorsMatches[1], 10) : 0;
+                    const skipped = skippedMatches ? parseInt(skippedMatches[1], 10) : 0;
+    
+                    totalTests += total;
+                    failedTests += failures;
+                    errorTests += errors;
+                    skippedTests += skipped;
+    
+                    if (failures > 0) {
+                        if (!failedTestsByAuthor[author]) {
+                          failedTestsByAuthor[author] = 0;
+                        }
+                        failedTestsByAuthor[author] += failures;
+                      }
+                })
+
+            }
+        })
+
+        const passedTests = totalTests - failedTests - errorTests - skippedTests;
+
+        console.log(`${student} has passed ${passedTests} tests and failed ${failedTests} tests.`);
+        for (const author in failedTestsByAuthor) {
+            console.log(`${failedTestsByAuthor[author]} from ${author}`);
+        }
+
+    });
+}
+
+function scoreStudent(obj) {
+    let totalTests = 0;
+    let failedTests = 0;
+    let errorTests = 0;
+    let skippedTests = 0;
+    let failedTestsByAuthor = {};
+    console.log('PARSING THE FOLLOWING OBJECT')
+    console.log(obj)
+
+    Object.keys(obj).forEach((key) => {
+        if (key !== 'student') {
+            let author = key
+            for (const reportName in obj[key]) {
+                const reportPath = path.join('test/warzone/participants/', student, 'target/surefire-reports', reportName)
+                const reportContent = fs.readFileSync(reportPath, 'utf-8')
+                const totalMatches = reportContent.match(/Tests run: (\d+)/);
+                const failuresMatches = reportContent.match(/Failures: (\d+)/);
+                const errorsMatches = reportContent.match(/Errors: (\d+)/);
+                const skippedMatches = reportContent.match(/Skipped: (\d+)/);
+
+                const total = totalMatches ? parseInt(totalMatches[1], 10) : 0;
+                const failures = failuresMatches ? parseInt(failuresMatches[1], 10) : 0;
+                const errors = errorsMatches ? parseInt(errorsMatches[1], 10) : 0;
+                const skipped = skippedMatches ? parseInt(skippedMatches[1], 10) : 0;
+
+                totalTests += total;
+                failedTests += failures;
+                errorTests += errors;
+                skippedTests += skipped;
+
+                if (failures > 0) {
+                    if (!failedTestsByAuthor[author]) {
+                        failedTestsByAuthor[author] = 0;
+                    }
+                    failedTestsByAuthor[author] += failures;
+                }
+            }
+        }
+    })
+
+    const passedTests = totalTests - failedTests - errorTests - skippedTests;
+
+    console.log(`${student} has passed ${passedTests} tests and failed ${failedTests} tests.`);
+    for (const author in failedTestsByAuthor) {
+        console.log(`${failedTestsByAuthor[author]} from ${author}`);
+    }
+}
+
+function parseReport(report) {
+    const reportContent = fs.readFileSync(report, 'utf8');
+    const testsRunRegex = /Tests run: (\d+),/;
+    const failuresRegex = /Failures: (\d+),/;
+    const errorsRegex = /Errors: (\d+),/;
+
+    const testsRunMatch = reportContent.match(testsRunRegex);
+    const failuresMatch = reportContent.match(failuresRegex);
+
+    const testsPassed = testsRunMatch ? parseInt(testsRunMatch[1]) - parseInt(failuresMatch[1]) : 0;
+    const testsFailed = failuresMatch ? parseInt(failuresMatch[1]) : 0;
+
+    const result = {
+        passed: testsPassed,
+        failed: testsFailed
+    }
+
+    return result
 }
 /*
 const final_process = async () => {
