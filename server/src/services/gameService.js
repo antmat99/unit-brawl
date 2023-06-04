@@ -49,10 +49,10 @@ const shouldStartFinalProcess = async () => {
 
 const finalProcess = async (labId) => {
 
-    const participants =
+/*     const participants =
         [
             {
-                user_id: 's236507',
+                user_id: 1,
                 lab_id: 57,
                 points: 0,
                 position: 0,
@@ -60,11 +60,12 @@ const finalProcess = async (labId) => {
                 coverage_percentage: 72.168284789644,
                 tests_failed_on_enemy: 0,
                 tests_enemy_passed: 0,
+                studentId: 's236507',
                 idealTestsPass: true,
                 eliminated: false
             },
             {
-                user_id: 's292488',
+                user_id: 2,
                 lab_id: 57,
                 points: 0,
                 position: 0,
@@ -72,11 +73,12 @@ const finalProcess = async (labId) => {
                 coverage_percentage: 90.69579288025889,
                 tests_failed_on_enemy: 0,
                 tests_enemy_passed: 0,
+                studentId: 's292488',
                 idealTestsPass: true,
                 eliminated: false
             },
             {
-                user_id: 's123456',
+                user_id: 3,
                 lab_id: 57,
                 points: 0,
                 position: 0,
@@ -84,11 +86,12 @@ const finalProcess = async (labId) => {
                 coverage_percentage: 89.72491909385113,
                 tests_failed_on_enemy: 0,
                 tests_enemy_passed: 0,
+                studentId: 's123456',
                 idealTestsPass: true,
                 eliminated: false
             },
             {
-                user_id: 's000000',
+                user_id: 4,
                 lab_id: 57,
                 points: 0,
                 position: 0,
@@ -96,10 +99,11 @@ const finalProcess = async (labId) => {
                 coverage_percentage: 36.650485436893206,
                 tests_failed_on_enemy: 0,
                 tests_enemy_passed: 0,
+                studentId: 's000000',
                 idealTestsPass: false,
                 eliminated: false
             }
-        ]
+        ] */
 
     try {
         const username = await labDao.getLabSubmitterId(labId)
@@ -107,7 +111,6 @@ const finalProcess = async (labId) => {
         const idealLink = await labDao.getLinkToIdealSolution(labId)
         const cap = await labDao.getTestCap(labId)
         console.log(`Starting war for lab ${labId}`)
-        /*
         const participants = await labDao.getUserLabListByLabId(labId)
         console.log('Participants for this lab are...')
         console.log(participants)
@@ -120,13 +123,16 @@ const finalProcess = async (labId) => {
         console.log('Survivors: ')
         console.log(survivors)
         
-        
         assembleFiringSquad()
         console.log('Firing squad assembled')
-        */
+        
         console.log('Starting the battle...')
-        await battle(participants)
-
+        const results = await battle(survivors)
+        console.log('RESULTS')
+        console.log(results)
+        //await userLabDao.updateWarResults(results)
+        
+        
     } catch (e) {
         console.log('ERROR during final process')
         console.log(e)
@@ -138,7 +144,7 @@ const filter = async (participants, username, accessToken, cap) => {
     const survivors = await Promise.all(
         participants.map(async (p) => {
             const studentId = await userDao.getNicknameById(p.user_id);
-            p.user_id = studentId
+            p.studentId = studentId
             await shellService.clonePrivateRepoInDir(
                 p.repository,
                 `test/warzone/participants/${studentId}`,
@@ -337,15 +343,14 @@ const assembleFiringSquad = () => {
 const battle = async (participants) => {
     var results = {}
     try {
-        //await copyTestBatteryInStudents()
-
+        await copyTestBatteryInStudents()
         console.log('Copied test battery in students')
         participants.forEach(async (p) => {
-            console.log(`Running test battery on ${p.user_id}...`)
-            //await runTestBatteryOnStudent(p.user_id)
-            await processResult(results, p.user_id)
+            console.log(`Running test battery on ${p.studentId}...`)
+            await runTestBatteryOnStudent(p.studentId)
+            results = await processResult(results, p.studentId, p.idealTestsPass)
         })
-
+        return results
     } catch (e) {
         console.log('Error during battle: ' + e)
     }
@@ -391,157 +396,51 @@ const runTestBatteryOnStudent = async (studentId) => {
         console.log(`${studentId} has passed every test!`)
     } catch (e) {
         console.log(`There are tests failures for ${studentId}`)
+        console.log(e)
     }
 }
 
-const processResult = async (results, studentId) => {
-    const groupedReports = parseReportsForStudent()
-    //const studentScore = scoreStudent(groupedReports)
-}
+const processResult = async (results, studentId, idealTestsPass) => {
 
-function parseReportsForStudent() {
-    let totalTests = 0;
-    let failedTests = 0;
-    let errorTests = 0;
-    let skippedTests = 0;
-    let failedTestsByAuthor = {};
-    const participantsDir = 'test/warzone/participants';
+    const testReportPath = `test/warzone/participants/${studentId}/target/surefire-reports`
+    try {
+        const testReportFiles = fs.readdirSync(testReportPath)
 
-    const participants = fs.readdirSync(participantsDir)
-    participants.forEach(participant => {
-        const participantDir = path.join(participantsDir, participant);
-        const reportsDir = path.join(participantDir, 'target/surefire-reports');
-
-        const files = fs.readdirSync(reportsDir)
-        const reportGroups = {};
-
-        files.forEach(file => {
+        testReportFiles.forEach((file) => {
             if (file.endsWith('.txt')) {
-                const [id, testName] = file.split('.', 2);
-
-                if (id) {
-                    reportGroups.student = participant
-                    const reportName = file;
-
-                    if (!reportGroups[id]) {
-                        reportGroups[id] = [];
-                    }
-
-                    reportGroups[id].push(reportName);
-                }
-            }
-        });
-
-        const student = reportGroups['student']
-
-        Object.keys(reportGroups).forEach((key) => {
-            if (key !== 'student') {
-                let author = key
-                reportGroups[key].forEach((reportName) => {
-                    const reportPath = path.join('test/warzone/participants/', student, 'target/surefire-reports', reportName)
-                    const reportContent = fs.readFileSync(reportPath, 'utf-8')
-                    const totalMatches = reportContent.match(/Tests run: (\d+)/);
-                    const failuresMatches = reportContent.match(/Failures: (\d+)/);
-                    const errorsMatches = reportContent.match(/Errors: (\d+)/);
-                    const skippedMatches = reportContent.match(/Skipped: (\d+)/);
-    
-                    const total = totalMatches ? parseInt(totalMatches[1], 10) : 0;
-                    const failures = failuresMatches ? parseInt(failuresMatches[1], 10) : 0;
-                    const errors = errorsMatches ? parseInt(errorsMatches[1], 10) : 0;
-                    const skipped = skippedMatches ? parseInt(skippedMatches[1], 10) : 0;
-    
-                    totalTests += total;
-                    failedTests += failures;
-                    errorTests += errors;
-                    skippedTests += skipped;
-    
-                    if (failures > 0) {
-                        if (!failedTestsByAuthor[author]) {
-                          failedTestsByAuthor[author] = 0;
-                        }
-                        failedTestsByAuthor[author] += failures;
-                      }
-                })
-
-            }
-        })
-
-        const passedTests = totalTests - failedTests - errorTests - skippedTests;
-
-        console.log(`${student} has passed ${passedTests} tests and failed ${failedTests} tests.`);
-        for (const author in failedTestsByAuthor) {
-            console.log(`${failedTestsByAuthor[author]} from ${author}`);
-        }
-
-    });
-}
-
-function scoreStudent(obj) {
-    let totalTests = 0;
-    let failedTests = 0;
-    let errorTests = 0;
-    let skippedTests = 0;
-    let failedTestsByAuthor = {};
-    console.log('PARSING THE FOLLOWING OBJECT')
-    console.log(obj)
-
-    Object.keys(obj).forEach((key) => {
-        if (key !== 'student') {
-            let author = key
-            for (const reportName in obj[key]) {
-                const reportPath = path.join('test/warzone/participants/', student, 'target/surefire-reports', reportName)
-                const reportContent = fs.readFileSync(reportPath, 'utf-8')
-                const totalMatches = reportContent.match(/Tests run: (\d+)/);
-                const failuresMatches = reportContent.match(/Failures: (\d+)/);
-                const errorsMatches = reportContent.match(/Errors: (\d+)/);
-                const skippedMatches = reportContent.match(/Skipped: (\d+)/);
+                const author = file.split('.')[0]
+                const report = fs.readFileSync(path.join(testReportPath, file), 'utf-8')
+                const totalMatches = report.match(/Tests run: (\d+)/);
+                const failuresMatches = report.match(/Failures: (\d+)/);
+                const errorsMatches = report.match(/Errors: (\d+)/);
+                const skippedMatches = report.match(/Skipped: (\d+)/);
 
                 const total = totalMatches ? parseInt(totalMatches[1], 10) : 0;
                 const failures = failuresMatches ? parseInt(failuresMatches[1], 10) : 0;
                 const errors = errorsMatches ? parseInt(errorsMatches[1], 10) : 0;
                 const skipped = skippedMatches ? parseInt(skippedMatches[1], 10) : 0;
+                const passed = total - failures - errors - skipped
 
-                totalTests += total;
-                failedTests += failures;
-                errorTests += errors;
-                skippedTests += skipped;
+                if (!results[studentId]) {
+                    results[studentId] = {
+                        enemyTestsPassed: 0,
+                        testsFailedOnEnemy: 0,
+                        idealTestsPass: idealTestsPass
+                    }
+                }
+
+                results[studentId].enemyTestsPassed += passed
 
                 if (failures > 0) {
-                    if (!failedTestsByAuthor[author]) {
-                        failedTestsByAuthor[author] = 0;
-                    }
-                    failedTestsByAuthor[author] += failures;
+                    results[author].testsFailedOnEnemy += failures
                 }
             }
-        }
-    })
+        })
 
-    const passedTests = totalTests - failedTests - errorTests - skippedTests;
-
-    console.log(`${student} has passed ${passedTests} tests and failed ${failedTests} tests.`);
-    for (const author in failedTestsByAuthor) {
-        console.log(`${failedTestsByAuthor[author]} from ${author}`);
+        return results
+    } catch (e) {
+        console.log('ERROR parsing tests results: ' + e)
     }
-}
-
-function parseReport(report) {
-    const reportContent = fs.readFileSync(report, 'utf8');
-    const testsRunRegex = /Tests run: (\d+),/;
-    const failuresRegex = /Failures: (\d+),/;
-    const errorsRegex = /Errors: (\d+),/;
-
-    const testsRunMatch = reportContent.match(testsRunRegex);
-    const failuresMatch = reportContent.match(failuresRegex);
-
-    const testsPassed = testsRunMatch ? parseInt(testsRunMatch[1]) - parseInt(failuresMatch[1]) : 0;
-    const testsFailed = failuresMatch ? parseInt(failuresMatch[1]) : 0;
-
-    const result = {
-        passed: testsPassed,
-        failed: testsFailed
-    }
-
-    return result
 }
 /*
 const final_process = async () => {
