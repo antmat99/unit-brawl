@@ -58,6 +58,9 @@ app.use('/eipiai/sessions', login);
 const gitlab = require('./src/routes/gitlab.js')
 app.use('/eipiai/gitlab', gitlab);
 
+const game = require('./src/routes/game.js')
+app.use('/eipiai/game', game)
+
 
 // Activate the server
 app.listen(port, () => {

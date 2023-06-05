@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { ListGroup, Container, Row, Col, Nav, Button } from 'react-bootstrap';
+import { Container, Row, Col, Nav, Button } from 'react-bootstrap';
 import Leaderboard from "../../components/common/Leaderboard"
+
+import API from '../../API'
 
 function LabMain(props) {
 
@@ -15,11 +17,12 @@ function LabMain(props) {
     const [labElement, setLabElement] = useState([])
     const [component, setComponent] = useState(MainComponents.Trace)
     const [dirty, setDirty] = useState(false);
-
-
+    const [isWarHappening, setIsWarHappening] = useState(false)
+    const [isWarDone, setIsWarDone] = useState(false)
+    const [leaderboard, setLeaderboard] = useState(undefined)
 
     useEffect(() => {
-        if (lab != undefined) {
+        if (lab !== undefined) {
             setLabElement(undefined)
             setDirty(true)
         }
@@ -32,10 +35,22 @@ function LabMain(props) {
         }
     }, [dirty])
 
+    const beginWar = async () => {
+        setIsWarHappening(true)
+        const leaderboard = await API.beginWar(lab.id)
+        setLeaderboard(leaderboard)
+        setIsWarHappening(false)
+        setIsWarDone(true)
+    }
+
+
     const createLabElement = (lab) => {
+        const warYetToHappen = lab.leaderboard.every(entry => entry.position === 0);
         setComponent(MainComponents.Trace)
         const ret = []
+        console.log('War yet to happen: ' + warYetToHappen)
         ret.push(
+            
             <Container fluid key='container'>
                 <Row>
                     <Col>
@@ -43,6 +58,14 @@ function LabMain(props) {
                             {lab.name}
                         </h1>
                     </Col>
+                    {
+                        lab.expired && warYetToHappen ?
+                            <Col style={{ justifyContent: 'flex-end' }}>
+                                <Button onClick={() => beginWar()}>Begin war</Button>
+                            </Col>
+                            :
+                            ''
+                    }
                     <Col style={{ justifyContent: 'flex-end' }}>
                         <Button onClick={() => editLab()}>Edit</Button>
                     </Col>
@@ -87,7 +110,7 @@ function LabMain(props) {
                             <Nav.Link eventKey={MainComponents.Info}>Info</Nav.Link>
                         </Nav.Item>
                         {
-                            lab.expired ?
+                            lab.expired && isWarDone ?
                                 <Nav.Item>
                                     <Nav.Link eventKey={MainComponents.Leaderboard}>Leaderboard</Nav.Link>
                                 </Nav.Item>
@@ -97,20 +120,20 @@ function LabMain(props) {
                     </Nav>
                 </Row>
                 <Row>
-                    {component == MainComponents.Trace ?
+                    {component === MainComponents.Trace ?
                         <MainComponentTrace trace={lab.trace} />
                         :
                         ''
                     }
-                    {component == MainComponents.Leaderboard ?
-                        <MainComponentLeaderboard leaderboard={lab.leaderboard} /> :
+                    {component === MainComponents.Leaderboard ?
+                        <MainComponentLeaderboard leaderboard={leaderboard} /> :
                         ''
                     }
-                    {component == MainComponents.MyResults ?
+                    {component === MainComponents.MyResults ?
                         <MainComponentResult result={lab.userResult} /> :
                         ''
                     }
-                    {component == MainComponents.Info ?
+                    {component === MainComponents.Info ?
                         <MainComponentInfo players={numberOfPlayers} lab={lab} /> :
                         ''
                     }
@@ -124,7 +147,7 @@ function LabMain(props) {
     return (
         <>
             {
-                lab == undefined ?
+                lab === undefined ?
                     ''
                     :
                     labElement

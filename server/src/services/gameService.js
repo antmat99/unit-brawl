@@ -47,7 +47,7 @@ const shouldStartFinalProcess = async () => {
     else return activeLab[0].expiration_date == dayjs().format('DD-MM-YYYY')
 }
 
-const finalProcess = async (labId) => {
+exports.finalProcess = async (labId) => {
 
     /*     const participants =
             [
@@ -131,15 +131,14 @@ const finalProcess = async (labId) => {
         var survivors = await filter(participants, username, accessToken, cap)
         console.log('Survivors: ')
         console.log(survivors)
-
         assembleFiringSquad()
         console.log('Firing squad assembled')
-
         console.log('Starting the battle...')
         const results = await battle(survivors)
         console.log('RESULTS')
         console.log(results)
         await updateWarResults(labId, results)
+        return results
     } catch (e) {
         console.log('ERROR during final process')
         console.log(e)
