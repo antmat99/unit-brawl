@@ -8,7 +8,8 @@ const initialPoints = 1;
  * By doing so we cover 2000/5 = 400 positions and even the last one classified will receive not-too-low points.
  * Formula to know how many points to give is WINNER_POINTS - INTERVAL * (position - 1)
  */
-const WINNER_POINTS = 2000;
+//const WINNER_POINTS = 2000;
+const WINNER_POINTS = 4000;
 const INTERVAL = 5;
 
 /* Achievements' parameters */
