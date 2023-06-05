@@ -103,7 +103,7 @@ const finalProcess = async (labId) => {
                     idealTestsPass: false,
                     eliminated: false
                 }
-            ] */
+            ]
 
     const results = {
         s236507: { enemyTestsPassed: 17, testsFailedOnEnemy: 1, idealTestsPass: true },
@@ -112,13 +112,15 @@ const finalProcess = async (labId) => {
         s000000: { enemyTestsPassed: 23, testsFailedOnEnemy: 0, idealTestsPass: false}
     }
 
+    */
+
     try {
         const username = await labDao.getLabSubmitterId(labId)
         const accessToken = await labDao.getLabAccessToken(labId)
         const idealLink = await labDao.getLinkToIdealSolution(labId)
         const cap = await labDao.getTestCap(labId)
         console.log(`Starting war for lab ${labId}`)
-        /* const participants = await labDao.getUserLabListByLabId(labId)
+        const participants = await labDao.getUserLabListByLabId(labId)
         console.log('Participants for this lab are...')
         console.log(participants)
         console.log(`Cloning ideal solution from ${idealLink}`)
@@ -136,7 +138,7 @@ const finalProcess = async (labId) => {
         console.log('Starting the battle...')
         const results = await battle(survivors)
         console.log('RESULTS')
-        console.log(results) */
+        console.log(results)
         await updateWarResults(labId, results)
     } catch (e) {
         console.log('ERROR during final process')
@@ -401,7 +403,12 @@ const runTestBatteryOnStudent = async (studentId) => {
         console.log(`${studentId} has passed every test!`)
     } catch (e) {
         console.log(`There are tests failures for ${studentId}`)
-        console.log(e)
+        const stdout = Buffer.from(e.stdout, 'utf-8')
+        const stderr = Buffer.from(e.stderr, 'utf-8')
+        console.log('STDOUT: ')
+        console.log(stdout)
+        console.log('STDERR: ')
+        console.log(stderr)
     }
 }
 
@@ -459,6 +466,7 @@ const updateWarResults = async (labId, results) => {
         const points = (parameters.POINTS_PER_PASSED * enemyTestsPassed + parameters.POINTS_PER_FAILURE * testsFailedOnEnemy) * malusIdealTests
         console.log(`Student ID: ${userId} - Enemy tests passed: ${enemyTestsPassed} - Tests failed on enemy: ${testsFailedOnEnemy} - Malus: ${malusIdealTests}`)
         await userLabDao.updateLabResults(userId, labId, enemyTestsPassed, testsFailedOnEnemy, points)
+        await userDao.addPoints(userId, points)
     })
 }
 /*
