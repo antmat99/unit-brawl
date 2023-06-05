@@ -350,3 +350,17 @@ exports.getAll = () => {
         });
     });
 }
+
+exports.updateLabResults = (userId, labId, testsEnemyPassed, testsEnemyFailed, points) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'UPDATE user_lab SET tests_enemy_passed = ?, tests_failed_on_enemy = ?, points = ? WHERE user_id = ? AND lab_id = ?'
+        db.run(sql, [testsEnemyPassed, testsEnemyFailed, points, userId, labId], (err) => {
+            if(err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'));
+            } else {
+                resolve(true)
+            }
+        })
+    })
+}

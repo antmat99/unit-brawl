@@ -49,61 +49,68 @@ const shouldStartFinalProcess = async () => {
 
 const finalProcess = async (labId) => {
 
-/*     const participants =
-        [
-            {
-                user_id: 1,
-                lab_id: 57,
-                points: 0,
-                position: 0,
-                repository: 'https://gitlab.com/s292488/diet-student2',
-                coverage_percentage: 72.168284789644,
-                tests_failed_on_enemy: 0,
-                tests_enemy_passed: 0,
-                studentId: 's236507',
-                idealTestsPass: true,
-                eliminated: false
-            },
-            {
-                user_id: 2,
-                lab_id: 57,
-                points: 0,
-                position: 0,
-                repository: 'https://gitlab.com/s292488/diet-student1',
-                coverage_percentage: 90.69579288025889,
-                tests_failed_on_enemy: 0,
-                tests_enemy_passed: 0,
-                studentId: 's292488',
-                idealTestsPass: true,
-                eliminated: false
-            },
-            {
-                user_id: 3,
-                lab_id: 57,
-                points: 0,
-                position: 0,
-                repository: 'https://gitlab.com/s292488/diet-student3',
-                coverage_percentage: 89.72491909385113,
-                tests_failed_on_enemy: 0,
-                tests_enemy_passed: 0,
-                studentId: 's123456',
-                idealTestsPass: true,
-                eliminated: false
-            },
-            {
-                user_id: 4,
-                lab_id: 57,
-                points: 0,
-                position: 0,
-                repository: 'https://gitlab.com/s292488/diet-ideal-tests-fail',
-                coverage_percentage: 36.650485436893206,
-                tests_failed_on_enemy: 0,
-                tests_enemy_passed: 0,
-                studentId: 's000000',
-                idealTestsPass: false,
-                eliminated: false
-            }
-        ] */
+    /*     const participants =
+            [
+                {
+                    user_id: 1,
+                    lab_id: 57,
+                    points: 0,
+                    position: 0,
+                    repository: 'https://gitlab.com/s292488/diet-student2',
+                    coverage_percentage: 72.168284789644,
+                    tests_failed_on_enemy: 0,
+                    tests_enemy_passed: 0,
+                    studentId: 's236507',
+                    idealTestsPass: true,
+                    eliminated: false
+                },
+                {
+                    user_id: 2,
+                    lab_id: 57,
+                    points: 0,
+                    position: 0,
+                    repository: 'https://gitlab.com/s292488/diet-student1',
+                    coverage_percentage: 90.69579288025889,
+                    tests_failed_on_enemy: 0,
+                    tests_enemy_passed: 0,
+                    studentId: 's292488',
+                    idealTestsPass: true,
+                    eliminated: false
+                },
+                {
+                    user_id: 3,
+                    lab_id: 57,
+                    points: 0,
+                    position: 0,
+                    repository: 'https://gitlab.com/s292488/diet-student3',
+                    coverage_percentage: 89.72491909385113,
+                    tests_failed_on_enemy: 0,
+                    tests_enemy_passed: 0,
+                    studentId: 's123456',
+                    idealTestsPass: true,
+                    eliminated: false
+                },
+                {
+                    user_id: 4,
+                    lab_id: 57,
+                    points: 0,
+                    position: 0,
+                    repository: 'https://gitlab.com/s292488/diet-ideal-tests-fail',
+                    coverage_percentage: 36.650485436893206,
+                    tests_failed_on_enemy: 0,
+                    tests_enemy_passed: 0,
+                    studentId: 's000000',
+                    idealTestsPass: false,
+                    eliminated: false
+                }
+            ] */
+
+    const results = {
+        s236507: { enemyTestsPassed: 17, testsFailedOnEnemy: 1, idealTestsPass: true },
+        s292488: { enemyTestsPassed: 17, testsFailedOnEnemy: 0, idealTestsPass: true },
+        s123456: { enemyTestsPassed: 17, testsFailedOnEnemy: 0, idealTestsPass: true },
+        s000000: { enemyTestsPassed: 23, testsFailedOnEnemy: 0, idealTestsPass: false}
+    }
 
     try {
         const username = await labDao.getLabSubmitterId(labId)
@@ -111,7 +118,7 @@ const finalProcess = async (labId) => {
         const idealLink = await labDao.getLinkToIdealSolution(labId)
         const cap = await labDao.getTestCap(labId)
         console.log(`Starting war for lab ${labId}`)
-        const participants = await labDao.getUserLabListByLabId(labId)
+        /* const participants = await labDao.getUserLabListByLabId(labId)
         console.log('Participants for this lab are...')
         console.log(participants)
         console.log(`Cloning ideal solution from ${idealLink}`)
@@ -122,17 +129,15 @@ const finalProcess = async (labId) => {
         var survivors = await filter(participants, username, accessToken, cap)
         console.log('Survivors: ')
         console.log(survivors)
-        
+
         assembleFiringSquad()
         console.log('Firing squad assembled')
-        
+
         console.log('Starting the battle...')
         const results = await battle(survivors)
         console.log('RESULTS')
-        console.log(results)
-        //await userLabDao.updateWarResults(results)
-        
-        
+        console.log(results) */
+        await updateWarResults(labId, results)
     } catch (e) {
         console.log('ERROR during final process')
         console.log(e)
@@ -441,6 +446,20 @@ const processResult = async (results, studentId, idealTestsPass) => {
     } catch (e) {
         console.log('ERROR parsing tests results: ' + e)
     }
+}
+
+const updateWarResults = async (labId, results) => {
+    console.log('Updating results')
+    Object.keys(results).forEach(async (studentId) => {
+        console.log(`Updating results for ${studentId}`)
+        const userId = await userDao.getIdByNickname(studentId)
+        const enemyTestsPassed = results[studentId].enemyTestsPassed
+        const testsFailedOnEnemy = results[studentId].testsFailedOnEnemy
+        const malusIdealTests = results[studentId].idealTestsPass ? 1 : 0.7
+        const points = (parameters.POINTS_PER_PASSED * enemyTestsPassed + parameters.POINTS_PER_FAILURE * testsFailedOnEnemy) * malusIdealTests
+        console.log(`Student ID: ${userId} - Enemy tests passed: ${enemyTestsPassed} - Tests failed on enemy: ${testsFailedOnEnemy} - Malus: ${malusIdealTests}`)
+        await userLabDao.updateLabResults(userId, labId, enemyTestsPassed, testsFailedOnEnemy, points)
+    })
 }
 /*
 const final_process = async () => {

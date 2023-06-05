@@ -667,3 +667,17 @@ exports.getActiveLabStudentLink = (studentId) => {
         })
     })
 }
+
+exports.getIdByNickname = (studentId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT id FROM user WHERE nickname = ?'
+        db.get(sql, [studentId], (err, row) => {
+            if(err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'))
+            } else {
+                resolve(row.id)
+            }
+        })
+    })
+}
