@@ -323,6 +323,14 @@ async function getGlobalLeaderboard() {
     }
 }
 
+async function beginWar(labId) {
+    const response = await fetch(URL + '/game?labId=' + labId, { credentials: 'include' })
+    if(response.ok) {
+        return response.json()
+    } else {
+        throw response
+    }
+}
 const API = {
     logIn,
     logOut,
@@ -343,6 +351,7 @@ const API = {
     getLabsReport,
     getUsersReport,
     getUserLabsReport,
-    getGlobalLeaderboard
+    getGlobalLeaderboard,
+    beginWar
 };
 export default API;

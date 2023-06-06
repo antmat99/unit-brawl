@@ -364,3 +364,24 @@ exports.updateLabResults = (userId, labId, testsEnemyPassed, testsEnemyFailed, p
         })
     })
 }
+
+exports.getLeaderboard = (labId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT \
+                user_id, \
+                points, \
+            DENSE_RANK() OVER (ORDER BY points DESC) AS ranking \
+            FROM user_lab \
+            WHERE lab_id = ?\
+            ORDER BY \
+            points DESC'
+        db.all(sql, [labId], (err, rows) => {
+            if(err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'))
+            } else {
+                resolve(rows)
+            }
+        })
+    })
+}

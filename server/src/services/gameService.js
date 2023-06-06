@@ -138,11 +138,19 @@ exports.finalProcess = async (labId) => {
         console.log('RESULTS')
         console.log(results)
         await updateWarResults(labId, results)
-        return results
+        const leaderboard = await userLabDao.getLeaderboard(labId)
+        cleanup()
+        return leaderboard
     } catch (e) {
         console.log('ERROR during final process')
+        cleanup()
         console.log(e)
     }
+}
+
+function cleanup() {
+    fileService.clearDirectory(`test/warzone/firingSquad`)
+    fileService.clearDirectory(`test/warzone/participants`)
 }
 
 const filter = async (participants, username, accessToken, cap) => {
@@ -463,7 +471,6 @@ const updateWarResults = async (labId, results) => {
         const testsFailedOnEnemy = results[studentId].testsFailedOnEnemy
         const malusIdealTests = results[studentId].idealTestsPass ? 1 : 0.7
         const points = (parameters.POINTS_PER_PASSED * enemyTestsPassed + parameters.POINTS_PER_FAILURE * testsFailedOnEnemy) * malusIdealTests
-        console.log(`Student ID: ${userId} - Enemy tests passed: ${enemyTestsPassed} - Tests failed on enemy: ${testsFailedOnEnemy} - Malus: ${malusIdealTests}`)
         await userLabDao.updateLabResults(userId, labId, enemyTestsPassed, testsFailedOnEnemy, points)
         await userDao.addPoints(userId, points)
     })
