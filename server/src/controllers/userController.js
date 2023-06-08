@@ -112,9 +112,19 @@ exports.getUserAchievementNumber = async (req, res) => {
     }
 };
 
-exports.getGlobalLeaderboard = async (req, res) => {
+exports.getGlobalLeaderboardOld = async (req, res) => {
     try {
         const result = await userService.getGlobalLeaderboardWithPositions();
+        res.status(200).json(result);
+    } catch (e) {
+        console.log(e)
+        res.status(e.code).end(e.message);
+    }
+};
+
+exports.getGlobalLeaderboard = async (req, res) => {
+    try {
+        const result = await userService.getGlobalLeaderboard();
         res.status(200).json(result);
     } catch (e) {
         console.log(e)

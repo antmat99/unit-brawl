@@ -93,6 +93,14 @@ exports.getGlobalLeaderboardWithPositions = async () => {
     }
 }
 
+exports.getGlobalLeaderboard = async () => {
+    try {
+        return await userLabDao.getGlobalLeaderboard()
+    } catch(e) {
+        throw new Exception(500, e.message)
+    }
+}
+
 exports.getGlobalLeaderboardWithPositionsQuantity = async (quantity) => {
     try {
         const fullLeaderboard = await userDao.getGlobalLeaderboardWithPositions(); //id,nickname,points,avatar_selected_id,position

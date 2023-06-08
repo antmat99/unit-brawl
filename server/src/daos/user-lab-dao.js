@@ -405,3 +405,19 @@ exports.updateLabPosition = (labId) => {
         })
     })
 }
+
+exports.getGlobalLeaderboard = () => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT nickname AS username, total_points AS points, RANK() OVER(ORDER BY total_points DESC) AS position, image_path AS userAvatarLink \
+        FROM user, user_avatar, avatar \
+        WHERE user.id = user_avatar.user_id AND user_avatar.avatar_id = avatar.id'
+        db.all(sql, (err, rows) => {
+            if(err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'))
+            } else {
+                resolve(rows)
+            }
+        })
+    })
+}
