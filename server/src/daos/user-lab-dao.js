@@ -384,7 +384,6 @@ exports.getLeaderboard = (labId) => {
 }
 
 exports.updateLabPosition = (labId) => {
-    console.log('Updating positions for lab ID: ' + labId)
     return new Promise((resolve, reject) => {
         const sql = 'UPDATE user_lab \
                         SET position = subquery.ranking \

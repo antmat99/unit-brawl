@@ -1,5 +1,5 @@
-import { useEffect,useState } from "react";
-import { Col,Container,Row,Image,Table } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { Col, Container, Row, Image, Table } from "react-bootstrap";
 
 function Leaderboard(props) {
     const { resultList } = props;
@@ -16,8 +16,13 @@ function Leaderboard(props) {
         //TODO
         const ret = [];
         resultList.forEach((result, index) => {
+            const rowStyle = {};
+            if (index === 0) {
+                // First place: light golden background
+                rowStyle.backgroundColor = "#FFD700";
+            }
             ret.push(
-                <tr key={index}>
+                <tr key={index} style={rowStyle}>
                     <td>
                         <Container>
                             <Row>
@@ -40,7 +45,7 @@ function Leaderboard(props) {
                         </Container>
                     </td>
                     <td >
-                    <Container>
+                        <Container>
                             <Row >
                                 <Col lg='2' className='center-vertically-row'>
                                     <p className='margin-top-50'>{result.points}</p>

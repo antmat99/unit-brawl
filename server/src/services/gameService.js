@@ -106,13 +106,12 @@ exports.finalProcess = async (labId) => {
             ]
 
     const results = {
-        s236507: { enemyTestsPassed: 17, testsFailedOnEnemy: 1, idealTestsPass: true },
-        s292488: { enemyTestsPassed: 17, testsFailedOnEnemy: 0, idealTestsPass: true },
-        s123456: { enemyTestsPassed: 17, testsFailedOnEnemy: 0, idealTestsPass: true },
-        s000000: { enemyTestsPassed: 23, testsFailedOnEnemy: 0, idealTestsPass: false}
+        s236507: { enemyTestsPassed: 10, testsFailedOnEnemy: 4, idealTestsPass: true },
+        s292488: { enemyTestsPassed: 6, testsFailedOnEnemy: 0, idealTestsPass: false },
+        s000000: { enemyTestsPassed: 16, testsFailedOnEnemy: 0, idealTestsPass: false}
     }
-    
     */
+    
 
     try {
         const username = await labDao.getLabSubmitterId(labId)
@@ -138,9 +137,8 @@ exports.finalProcess = async (labId) => {
         console.log('RESULTS')
         console.log(results)
         await updateWarResults(labId, results)
-        const leaderboard = await userLabDao.getLeaderboard(labId)
-        cleanup()
-        return leaderboard
+        await userLabDao.updateLabPosition(labId)
+        return await userLabDao.getLeaderboard(labId)
     } catch (e) {
         console.log('ERROR during final process')
         cleanup()
@@ -462,6 +460,7 @@ const processResult = async (results, studentId, idealTestsPass) => {
     }
 }
 
+/*
 const updateWarResults = async (labId, results) => {
     console.log('Updating results')
     Object.keys(results).forEach(async (studentId) => {
@@ -475,6 +474,24 @@ const updateWarResults = async (labId, results) => {
         await userDao.addPoints(userId, points)
     })
 }
+*/
+
+const updateWarResults = async (labId, results) => {
+    console.log('Updating results')
+    const updatePromises = Object.keys(results).map(async (studentId) => {
+        console.log(`Updating results for ${studentId}`)
+        const userId = await userDao.getIdByNickname(studentId)
+        const enemyTestsPassed = results[studentId].enemyTestsPassed
+        const testsFailedOnEnemy = results[studentId].testsFailedOnEnemy
+        const malusIdealTests = results[studentId].idealTestsPass ? 1 : 0.7
+        const points = (parameters.POINTS_PER_PASSED * enemyTestsPassed + parameters.POINTS_PER_FAILURE * testsFailedOnEnemy) * malusIdealTests
+        await userLabDao.updateLabResults(userId, labId, enemyTestsPassed, testsFailedOnEnemy, points)
+        await userDao.addPoints(userId, points)
+    });
+
+    await Promise.all(updatePromises)
+}
+
 /*
 const final_process = async () => {
     console.log('Starting final process...')
