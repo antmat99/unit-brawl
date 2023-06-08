@@ -30,14 +30,14 @@ function LabMain(props) {
     }
 
     useEffect(() => {
-        if(lab === undefined) {
+        if (lab === undefined) {
             setLoading(true)
         } else {
             setLoading(false)
         }
     }, [lab])
 
-    if(loading) return <></>
+    if (loading) return <></>
     else return (
         <Container fluid>
             <Row>
@@ -293,6 +293,17 @@ function Buttons(props) {
                 </Col>
             </>
         )
+    } else {
+        return (
+            <>
+                <Col>
+                    <Button onClick={props.editLab}>Edit lab</Button>
+                </Col>
+                <Col>
+                    <Button onClick={props.stopLab}>Stop lab</Button>
+                </Col>
+            </>
+        )
     }
 }
 function MainComponentTrace(props) {
@@ -302,12 +313,8 @@ function MainComponentTrace(props) {
 }
 
 function MainComponentLeaderboard(props) {
-
-    console.log('LEADERBOARD')
-    console.log(props.leaderboard)
     return (
-        //<Leaderboard resultList={props.leaderboard} />
-        <></>
+        <Leaderboard resultList={props.leaderboard} />
     )
 }
 

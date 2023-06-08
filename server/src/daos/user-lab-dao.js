@@ -244,10 +244,10 @@ exports.getUserLabByLabId = (labId) => {
     });
 }
 
-exports.countUserPositionsGreaterEqual = (userId,position) => {
+exports.countUserPositionsGreaterEqual = (userId, position) => {
     return new Promise((resolve, reject) => {
         const sql = `SELECT COUNT(DISTINCT lab_id) FROM user_lab WHERE user_id = ? AND position <= ?`;
-        db.get(sql, [userId,position], (err, row) => {
+        db.get(sql, [userId, position], (err, row) => {
             if (err) {
                 console.log(err)
                 reject(new Exception(500, 'Database error'));
@@ -274,10 +274,10 @@ exports.updateUserLabCoverage = (userId, labId, coverage) => {
     });
 }
 
-exports.getUserLabByUserIdLabId = (userId,labId) => {
+exports.getUserLabByUserIdLabId = (userId, labId) => {
     return new Promise((resolve, reject) => {
         const sql = `SELECT * FROM user_lab WHERE user_id=? AND lab_id=?`;
-        db.get(sql, [userId,labId], (err, row) => {
+        db.get(sql, [userId, labId], (err, row) => {
             if (err) {
                 console.log(err)
                 reject(new Exception(500, 'Database error'));
@@ -355,7 +355,7 @@ exports.updateLabResults = (userId, labId, testsEnemyPassed, testsEnemyFailed, p
     return new Promise((resolve, reject) => {
         const sql = 'UPDATE user_lab SET tests_enemy_passed = ?, tests_failed_on_enemy = ?, points = ? WHERE user_id = ? AND lab_id = ?'
         db.run(sql, [testsEnemyPassed, testsEnemyFailed, points, userId, labId], (err) => {
-            if(err) {
+            if (err) {
                 console.log(err)
                 reject(new Exception(500, 'Database error'));
             } else {
@@ -367,20 +367,41 @@ exports.updateLabResults = (userId, labId, testsEnemyPassed, testsEnemyFailed, p
 
 exports.getLeaderboard = (labId) => {
     return new Promise((resolve, reject) => {
-        const sql = 'SELECT \
-                user_id, \
-                points, \
-            DENSE_RANK() OVER (ORDER BY points DESC) AS ranking \
-            FROM user_lab \
-            WHERE lab_id = ?\
-            ORDER BY \
-            points DESC'
+        const sql = 'SELECT nickname AS username, points, image_path AS userAvatarLink, DENSE_RANK() OVER (ORDER BY points DESC) AS position \
+                        FROM user_lab, user, user_avatar, avatar \
+                        WHERE lab_id = ? AND user_lab.user_id = user.id AND user_avatar.user_id = user.id AND user_avatar.avatar_id = avatar.id \
+                        ORDER BY points DESC'
         db.all(sql, [labId], (err, rows) => {
-            if(err) {
+            if (err) {
+                console.log('ERROR GETTING LEADERBOARD')
                 console.log(err)
                 reject(new Exception(500, 'Database error'))
             } else {
                 resolve(rows)
+            }
+        })
+    })
+}
+
+exports.updateLabPosition = (labId) => {
+    console.log('Updating positions for lab ID: ' + labId)
+    return new Promise((resolve, reject) => {
+        const sql = 'UPDATE user_lab \
+                        SET position = subquery.ranking \
+                        FROM ( \
+                            SELECT user_id, lab_id, DENSE_RANK() OVER (ORDER BY points DESC) AS ranking \
+                            FROM user_lab \
+                            WHERE lab_id = ? \
+                        ) AS subquery \
+                        WHERE user_lab.user_id = subquery.user_id \
+                        AND user_lab.lab_id = subquery.lab_id'
+        db.run(sql, [labId], (err) => {
+            if (err) {
+                console.log('ERROR UPDATING LAB POSITION')
+                console.log(err)
+                reject(new Exception(500, 'Database error'))
+            } else {
+                resolve()
             }
         })
     })
