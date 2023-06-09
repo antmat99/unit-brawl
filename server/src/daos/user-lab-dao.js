@@ -421,3 +421,17 @@ exports.getGlobalLeaderboard = () => {
         })
     })
 }
+
+exports.hasWarAlreadyHappened = (labId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT position FROM user_lab WHERE lab_id = ?'
+        db.all(sql, [labId], (err, rows) => {
+            if(err) {
+                console.log(err)
+                reject(new Exception(500, 'Database error'))
+            } else {
+                resolve(rows)
+            }
+        })
+    })
+}

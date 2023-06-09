@@ -37,6 +37,20 @@ function LabMain(props) {
         }
     }, [lab])
 
+    useEffect(() => {
+        const checkWarStatus = async () => {
+          const hasWarHappened = await API.hasWarAlreadyHappened(lab.id);
+          setIsWarDone(hasWarHappened);
+    
+          if (hasWarHappened) {
+            const leaderboard = await API.getLabLeaderboard(lab.id);
+            setLeaderboard(leaderboard);
+          }
+        };
+    
+        checkWarStatus();
+      }, [lab]);
+
     if (loading) return <></>
     else return (
         <Container fluid>

@@ -175,12 +175,22 @@ exports.checkSolutionCompiles = async (req, res) => {
     }
 }
 
-/* Remove */
-exports.getTestsReport = async (req, res) => {
+exports.hasWarAlreadyHappened = async (req, res) => {
     try {
-        const report = await labService.getTestsReport('https://gitlab.com/matteofavretto/mountain-huts.git');
+        const result = await labService.hasWarAlreadyHappened(req.query.labId)
         res.setHeader('Content-Type', 'application/json');
-        res.status(200).json(report)
+        res.status(200).json(result)
+    } catch(e) {
+        console.log(e)
+        res.status(e.code).end(e.message)
+    }
+}
+
+exports.getLabLeaderboard = async (req, res) => {
+    try {
+        const result = await labService.getLabLeaderboardMine(req.query.labId)
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json(result)
     } catch(e) {
         console.log(e)
         res.status(e.code).end(e.message)

@@ -645,3 +645,23 @@ function updateIdeal() {
         process.chdir(startDir);
     }
 }
+
+exports.hasWarAlreadyHappened = async (labId) => {
+    try {
+        const positions = await userLabDao.hasWarAlreadyHappened(labId) 
+        return positions.some(u => u.position !== 0)
+    } catch(e) {
+        console.log(e)
+        return null
+    }
+}
+
+exports.getLabLeaderboardMine = async (labId) => {
+    try {
+        const leaderboard = await userLabDao.getLeaderboard(labId)
+        return leaderboard
+    } catch(e) {
+        console.log(e)
+        return null
+    }
+}

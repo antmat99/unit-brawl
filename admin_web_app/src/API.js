@@ -331,6 +331,26 @@ async function beginWar(labId) {
         throw response
     }
 }
+
+async function hasWarAlreadyHappened(labId) {
+    const response = await fetch(URL + '/game/war-done?labId=' + labId, { credentials: 'include' })
+    if(response.ok) {
+        return response.json()
+    } else {
+        throw response
+    }
+}
+
+async function getLabLeaderboard(labId) {
+    const response = await fetch(URL + '/game/leaderboard?labId=' + labId, { credentials: 'include' })
+    if(response.ok) {
+        return response.json()
+    } else {
+        throw response
+    }
+}
+
+
 const API = {
     logIn,
     logOut,
@@ -352,6 +372,8 @@ const API = {
     getUsersReport,
     getUserLabsReport,
     getGlobalLeaderboard,
-    beginWar
+    beginWar,
+    hasWarAlreadyHappened,
+    getLabLeaderboard
 };
 export default API;
