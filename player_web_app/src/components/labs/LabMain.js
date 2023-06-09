@@ -3,6 +3,7 @@ import { ProgressBar, Container, Row, Col, Nav, Button } from 'react-bootstrap';
 import Leaderboard from "../../components/common/Leaderboard"
 import LabProgress from './LabsComponents/LabProgress'
 import Countdown from 'react-countdown';
+import API from "../../API";
 
 const dayjs = require('dayjs');
 const customParseFormat = require('dayjs/plugin/customParseFormat')
@@ -17,6 +18,7 @@ function LabMain(props) {
         Progress: 'progress'
     }
 
+    const [user, setUser] = useState(undefined)
     const { lab, labsAttendedIds, joinLab, userLabRegionLeaderboard, editRepository } = props;
     const [labElement, setLabElement] = useState([])
     const [component, setComponent] = useState(MainComponents.Trace)
@@ -107,6 +109,14 @@ function LabMain(props) {
             setDirty(false);
         }
     }, [dirty])
+
+    useEffect(() => {
+        const getUser = async () => {
+            const u = await API.getUserInfo()
+            setUser(u.nickname)
+        }
+        getUser()
+    }, [])
 
     const countdown = () => {
         return (
@@ -215,7 +225,7 @@ function LabMain(props) {
                 <Row>
                     <Col lg={12}>
                         {component === MainComponents.Trace && <MainComponentTrace trace={lab.trace} />}
-                        {component === MainComponents.Leaderboard && <MainComponentLeaderboard leaderboard={lab.leaderboard} />}
+                        {component === MainComponents.Leaderboard && <MainComponentLeaderboard leaderboard={lab.leaderboard} user={user}/>}
                         {component === MainComponents.MyResults &&
                             <MainComponentResult
                                 result={lab.userResult}
@@ -264,7 +274,7 @@ function MainComponentTrace(props) {
 function MainComponentLeaderboard(props) {
 
     return (
-        <Leaderboard resultList={props.leaderboard} />
+        <Leaderboard resultList={props.leaderboard} user={props.user}/>
     )
 }
 
@@ -274,7 +284,7 @@ function MainComponentResult(props) {
             {
                 (props.result !== undefined && props.labsAttendedIds.includes(props.lab.id)) ?
                     <>
-                        <Leaderboard resultList={props.resultLeaderboard} />
+                        <Leaderboard resultList={props.resultLeaderboard} local={true}/>
                     </>
                     :
                     <h5>You didn't take part to this lab.</h5>

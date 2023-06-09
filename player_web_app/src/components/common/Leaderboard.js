@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Col, Container, Row, Image, Table } from "react-bootstrap";
+import API from '../../API'
 
 function Leaderboard(props) {
-    const { resultList } = props;
+    const { resultList, user } = props;
     const [resultRows, setResultRows] = useState([]);
 
     useEffect(() => {
@@ -12,8 +13,17 @@ function Leaderboard(props) {
     const createRows = () => {
         const ret = [];
         resultList.forEach((result, index) => {
+            const rowStyle = {}
+            if(props.local !== true) {
+                if (index === 0) {
+                    // First place: light golden background
+                    rowStyle.backgroundColor = "#FFD700";
+                } else if(result.username === user) {
+                    rowStyle.backgroundColor = "#00FF77"
+                }
+            }
             ret.push(
-                <tr key={index}>
+                <tr key={index} style={rowStyle}>
                     <td>
                         <Container>
                             <Row>
@@ -39,7 +49,7 @@ function Leaderboard(props) {
                     <Container>
                             <Row >
                                 <Col lg='2' className='center-vertically-row'>
-                                    <p className='margin-top-50'>{result.points}</p>
+                                    <p className='margin-top-50'>{result.points.toFixed(1)}</p>
                                 </Col>
                             </Row>
                         </Container>

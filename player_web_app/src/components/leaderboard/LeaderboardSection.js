@@ -7,6 +7,7 @@ function LeaderboardSection() {
 
     const [resultList, setResultList] = useState([]);
     const [regionLeaderboard, setRegionLeaderboard] = useState([]);
+    const [currentUser, setCurrentUser] = useState(undefined)
 
     useEffect(() => {
         API.getGlobalLeaderboard()
@@ -15,6 +16,11 @@ function LeaderboardSection() {
         API.getGlobalRegionLeaderboard()
             .then(list => {
                 setRegionLeaderboard(list)
+            })
+            .catch(err => handleError(err))
+        API.getUserInfo()
+            .then(user => {
+                setCurrentUser(user.nickname)
             })
             .catch(err => handleError(err))
     }, []);
@@ -27,7 +33,7 @@ function LeaderboardSection() {
     return (
         <Container>
             {
-                regionLeaderboard.length != 0 ?
+                regionLeaderboard.length !== 0 ?
                     <>
                         <Row>
                             <Col>
@@ -36,7 +42,7 @@ function LeaderboardSection() {
                         </Row>
                         <Row>
                             <Col>
-                                <Leaderboard resultList={regionLeaderboard} />
+                                <Leaderboard resultList={regionLeaderboard} local={true}/>
                             </Col>
                         </Row>
                     </>
@@ -49,7 +55,7 @@ function LeaderboardSection() {
             </Row>
             <Row>
                 <Col>
-                    <Leaderboard resultList={resultList} />
+                    <Leaderboard resultList={resultList} user={currentUser}/>
                 </Col>
             </Row>
         </Container>
