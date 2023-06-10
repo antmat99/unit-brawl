@@ -301,7 +301,7 @@ exports.checkProgress = async (sid) => {
             cleanup(studentId)
             return result
         } catch (e) {
-            if (fs.readdirSync(`test/packages/check/${studentId}/target/classes`).length !== 0 && fs.readdirSync(`test/packages/check/${studentId}/target/test-classes`).length !== 0) {
+            if (fs.existsSync(`test/packages/check/${studentId}/target/classes`) && fs.existsSync(`test/packages/check/${studentId}/target/test-classes`) && fs.readdirSync(`test/packages/check/${studentId}/target/classes`).length !== 0 && fs.readdirSync(`test/packages/check/${studentId}/target/test-classes`).length !== 0) {
                 /* Compilation succeeded, tests failed */
                 console.log('Ideal tests failed')
                 result.testsReport = aggregateTestResults(`test/packages/check/${studentId}/target/surefire-reports/`)
