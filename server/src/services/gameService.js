@@ -111,7 +111,7 @@ exports.finalProcess = async (labId) => {
         s000000: { enemyTestsPassed: 16, testsFailedOnEnemy: 0, idealTestsPass: false}
     }
     */
-    
+
 
     try {
         const username = await labDao.getLabSubmitterId(labId)
@@ -138,6 +138,7 @@ exports.finalProcess = async (labId) => {
         console.log(results)
         await updateWarResults(labId, results)
         await userLabDao.updateLabPosition(labId)
+        cleanup()
         return await userLabDao.getLeaderboard(labId)
     } catch (e) {
         console.log('ERROR during final process')
@@ -357,6 +358,13 @@ const battle = async (participants) => {
     try {
         await copyTestBatteryInStudents()
         console.log('Copied test battery in students')
+        participants.forEach((p) => {
+            results[p.studentId] = {
+                enemyTestsPassed: 0,
+                testsFailedOnEnemy: 0,
+                idealTestsPass: p.idealTestsPass
+            }
+        })
         participants.forEach(async (p) => {
             console.log(`Running test battery on ${p.studentId}...`)
             await runTestBatteryOnStudent(p.studentId)
@@ -438,18 +446,15 @@ const processResult = async (results, studentId, idealTestsPass) => {
                 const skipped = skippedMatches ? parseInt(skippedMatches[1], 10) : 0;
                 const passed = total - failures - errors - skipped
 
-                if (!results[studentId]) {
-                    results[studentId] = {
-                        enemyTestsPassed: 0,
-                        testsFailedOnEnemy: 0,
-                        idealTestsPass: idealTestsPass
-                    }
-                }
-
                 results[studentId].enemyTestsPassed += passed
 
-                if (failures > 0) {
+                console.log('RESULT OBJECT FOR ' + studentId)
+                console.log(JSON.stringify(results[studentId]))
+
+                if (failures > 0 || errors > 0) {
+                    console.log(`Student ${author} has produced ${failures} tests that failed on ${studentId}, and ${errors} tests that produced an error`)
                     results[author].testsFailedOnEnemy += failures
+                    results[author].testsFailedOnEnemy += errors
                 }
             }
         })
@@ -477,7 +482,8 @@ const updateWarResults = async (labId, results) => {
 */
 
 const updateWarResults = async (labId, results) => {
-    console.log('Updating results')
+    console.log('RESULTS ARE IN')
+    console.log(JSON.stringify(results))
     const updatePromises = Object.keys(results).map(async (studentId) => {
         console.log(`Updating results for ${studentId}`)
         const userId = await userDao.getIdByNickname(studentId)
@@ -485,6 +491,10 @@ const updateWarResults = async (labId, results) => {
         const testsFailedOnEnemy = results[studentId].testsFailedOnEnemy
         const malusIdealTests = results[studentId].idealTestsPass ? 1 : 0.7
         const points = (parameters.POINTS_PER_PASSED * enemyTestsPassed + parameters.POINTS_PER_FAILURE * testsFailedOnEnemy) * malusIdealTests
+        console.log('FINAL RESULTS FOR ' + userId)
+        console.log('Enemy tests passed: ' + enemyTestsPassed)
+        console.log('Tests failed on enemy: ' + testsFailedOnEnemy)
+        console.log('Malus: ' + malusIdealTests)
         await userLabDao.updateLabResults(userId, labId, enemyTestsPassed, testsFailedOnEnemy, points)
         await userDao.addPoints(userId, points)
     });
